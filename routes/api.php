@@ -1,25 +1,34 @@
 <?php
 
-use App\Http\Controllers\Api\AuthApiController;
-use App\Http\Controllers\Api\ProjectApiController;
+use App\Http\Controllers\Api\Modules\Assessments\HistoryApiController;
+use App\Http\Controllers\Api\Modules\Assessments\StartReviewApiController;
+use App\Http\Controllers\Api\Modules\Assessments\StoreAssessmentApiController;
+use App\Http\Controllers\Api\Modules\Auth\LoginApiController;
+use App\Http\Controllers\Api\Modules\Auth\LogoutApiController;
+use App\Http\Controllers\Api\Modules\Auth\RegisterApiController;
+use App\Http\Controllers\Api\Modules\DocumentTypes\IndexDocumentTypeApiController;
+use App\Http\Controllers\Api\Modules\Projects\IndexProjectApiController;
+use App\Http\Controllers\Api\Modules\Projects\ShowProjectApiController;
+use App\Http\Controllers\Api\Modules\Projects\StoreProjectApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // Public auth
-    Route::post('/login', [AuthApiController::class, 'login']);
+    Route::post('/login', LoginApiController::class);
+    Route::post('/register', RegisterApiController::class);
 
     // Sanctum Protected
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthApiController::class, 'logout']);
+        Route::post('/logout', LogoutApiController::class);
 
-        Route::get('/projects', [ProjectApiController::class, 'index']);
-        Route::post('/projects', [ProjectApiController::class, 'store']);
-        Route::get('/projects/{id}', [ProjectApiController::class, 'show']);
+        Route::get('/projects', IndexProjectApiController::class);
+        Route::post('/projects', StoreProjectApiController::class);
+        Route::get('/projects/{id}', ShowProjectApiController::class);
 
-        Route::post('/assessments/{id}/start-review', [ProjectApiController::class, 'startReview']);
-        Route::post('/assessments/{id}', [ProjectApiController::class, 'assess']);
-        Route::get('/assessments/history', [ProjectApiController::class, 'history']);
+        Route::post('/assessments/{id}/start-review', StartReviewApiController::class);
+        Route::post('/assessments/{id}', StoreAssessmentApiController::class);
+        Route::get('/assessments/history', HistoryApiController::class);
 
-        Route::get('/document-types', [ProjectApiController::class, 'documentTypes']);
+        Route::get('/document-types', IndexDocumentTypeApiController::class);
     });
 });
