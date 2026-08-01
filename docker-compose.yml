@@ -34,7 +34,7 @@ services:
     container_name: siperdok_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-app_siperdok}
+      POSTGRES_DB: ${DB_DATABASE:-db_siperdok_laravel12}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
