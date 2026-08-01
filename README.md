@@ -82,7 +82,7 @@ Bahasa pemrograman dan framework utama:
 - 🚀 **Laravel `^12.0`** sebagai framework backend.
 - 🟢 **JavaScript ES Module** sebagai bahasa frontend.
 - 🖼️ **Vue `^3.5`** sebagai framework frontend.
-- 🔁 **Inertia.js** sebagai penghubung Laravel dan Vue SPA.
+- 🔁 **Inertia.js** sebagai shell render halaman Vue, sedangkan data dan aksi bisnis berjalan melalui REST API.
 - ⚡ **Vite `^7.0`** untuk bundling aset frontend.
 
 Library backend penting:
@@ -99,7 +99,7 @@ Library frontend dan aset UI:
 - 🎛️ **AdminLTE 3.2** untuk layout dashboard dan komponen admin.
 - ⭐ **Font Awesome** untuk ikon antarmuka.
 - 📈 **Chart.js** untuk grafik dashboard.
-- 🔗 **Axios** untuk HTTP client.
+- 🔗 **Axios** untuk HTTP client REST API dengan Bearer Token Sanctum.
 - 🎨 **Tailwind CSS `^4.0`** melalui plugin Vite.
 
 ---
@@ -192,8 +192,8 @@ export-reports
 
 ## ✨ Fitur Utama
 
-- 🔐 Autentikasi web berbasis session Laravel.
-- 🔑 Autentikasi API berbasis Bearer Token menggunakan Sanctum.
+- 🔑 Autentikasi REST API berbasis Bearer Token menggunakan Laravel Sanctum.
+- 🧭 Web route hanya berfungsi sebagai SPA fallback untuk render halaman Vue.
 - 🧾 Registrasi pengguna baru dengan role default `pemohon`.
 - 📁 Manajemen permohonan dokumen oleh pemohon.
 - ⬆️ Upload dokumen `pdf`, `doc`, `docx`, `png`, `jpg`, dan `jpeg` maksimal 10 MB.
@@ -204,7 +204,7 @@ export-reports
 - 📊 Dashboard KPI dan grafik tren permohonan.
 - 🧑‍💻 Master data pengguna untuk admin.
 - 📚 Master jenis dokumen untuk admin.
-- 📤 Ekspor laporan permohonan dalam format CSV.
+- 📤 Ekspor laporan permohonan dalam format CSV dan Excel `.xlsx`.
 - 📄 Preview dan unduh surat pengesahan PDF untuk permohonan berstatus `approved`.
 
 ---
@@ -317,6 +317,13 @@ pemohon@example.com / password
 penilai@example.com / password
 ```
 
+Login dan register pada antarmuka Vue menggunakan REST API:
+
+- `POST /api/v1/login`
+- `POST /api/v1/register`
+- Token Sanctum disimpan di `localStorage` sebagai `siperdok_token`.
+- Axios otomatis mengirim header `Authorization: Bearer <TOKEN>` untuk request berikutnya.
+
 Contoh alur pemohon:
 
 1. Login sebagai `pemohon@example.com`.
@@ -346,12 +353,44 @@ npm run build
 
 ## 📡 REST API
 
+Semua aksi bisnis aplikasi berjalan melalui REST API prefix `/api/v1`. Web route hanya menjadi fallback untuk membuka halaman Vue.
+
+Register API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Pemohon Baru",
+    "email":"pemohon_baru@example.com",
+    "phone":"08123456789",
+    "nip_nik":"3171000011112222",
+    "company_name":"PT Contoh Baru",
+    "password":"password",
+    "password_confirmation":"password"
+  }'
+```
+
 Login API:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"pemohon@example.com","password":"password"}'
+```
+
+Ambil user aktif, role, dan notifikasi:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/me \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
+```
+
+Ambil data dashboard:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/dashboard \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
 ```
 
 Ambil daftar permohonan:
@@ -371,6 +410,33 @@ curl -X POST http://127.0.0.1:8000/api/v1/projects \
   -F "description=Pengajuan dokumen kelayakan lingkungan." \
   -F "submit_action=submit" \
   -F "document=@/path/to/file.pdf"
+```
+
+Update permohonan draft/revisi:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/projects/1 \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
+  -F "title=Pembangunan Gedung Baru Revisi" \
+  -F "document_type_id=1" \
+  -F "description=Perbaikan data pengajuan." \
+  -F "submit_action=submit"
+```
+
+Hapus draft permohonan:
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/v1/projects/1 \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
+```
+
+Mulai review permohonan:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/assessments/1/start-review \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>" \
+  -H "Content-Type: application/json" \
+  -d '{"notes":"Review administrasi dimulai."}'
 ```
 
 Proses penilaian:
@@ -396,6 +462,33 @@ curl -X GET http://127.0.0.1:8000/api/v1/document-types \
   -H "Authorization: Bearer <TOKEN_ANDA>"
 ```
 
+Ambil master pengguna khusus admin:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/users \
+  -H "Authorization: Bearer <TOKEN_ADMIN>"
+```
+
+Export laporan:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/exports/projects/csv \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>" \
+  -o laporan.csv
+
+curl -X GET http://127.0.0.1:8000/api/v1/exports/projects/xlsx \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>" \
+  -o laporan.xlsx
+```
+
+Download PDF surat pengesahan:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/exports/projects/1/certificate \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
+  -o surat-pengesahan.pdf
+```
+
 Logout API:
 
 ```bash
@@ -416,9 +509,26 @@ php artisan test
 Test yang tersedia mencakup:
 
 - Render halaman login.
-- Login web.
-- Login API Sanctum.
-- Alur pembuatan permohonan, revisi, submit ulang, dan approval.
+- Login dan register API Sanctum.
+- Proteksi akses REST API berdasarkan role.
+- Alur pembuatan permohonan, revisi, submit ulang, dan approval melalui API.
+- Validasi route controller invokable.
+- Export Excel.
+
+Validasi tambahan yang disarankan sebelum commit:
+
+```bash
+php artisan route:list
+npm run build
+docker compose config
+```
+
+CI/CD sederhana tersedia untuk GitHub Actions dan GitLab CI:
+
+- `.github/workflows/ci.yml`
+- `.gitlab-ci.yml`
+
+Pipeline menjalankan test backend, build frontend, dan validasi Docker Compose.
 
 ---
 
@@ -427,7 +537,7 @@ Test yang tersedia mencakup:
 Proyek menyediakan `Dockerfile` dan `docker-compose.yml` untuk menjalankan service PHP-FPM, Nginx, PostgreSQL, dan Redis.
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 Port yang digunakan:
@@ -439,7 +549,7 @@ Port yang digunakan:
 | Redis | `6379:6379` |
 | PHP-FPM | `9000` |
 
-Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Pastikan konfigurasi Nginx tersedia sebelum memakai Docker untuk menjalankan webserver.
+Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Stack juga menyediakan worker queue dan scheduler agar proses notifikasi/background job berjalan.
 
 ---
 
