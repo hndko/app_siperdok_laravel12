@@ -10,7 +10,7 @@
             <div class="card-header">
                 <h3 class="card-title font-weight-bold"><i class="fas fa-file-signature text-warning mr-2"></i> Berkas & Informasi Permohonan</h3>
                 <div class="card-tools">
-                    <span class="badge badge-info px-3 py-2 h6 mb-0">{{ strtoupper($project->status) }}</span>
+                    <status-badge status="{{ $project->status }}"></status-badge>
                 </div>
             </div>
             <div class="card-body">
@@ -63,47 +63,14 @@
         </div>
     </div>
 
-    <!-- Right Column: Decision Action Form & Audit Trail -->
+    <!-- Right Column: Decision Action Form (Vue 3 Component) & Audit Trail -->
     <div class="col-md-5">
-        <!-- Decision Form Card -->
-        <div class="card card-outline card-success shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h3 class="card-title font-weight-bold text-success"><i class="fas fa-gavel mr-2"></i> Form Keputusan Penilaian</h3>
-            </div>
-            <div class="card-body">
-                @if(session('success'))
-                    <div class="alert alert-success py-2 small mb-3">{{ session('success') }}</div>
-                @endif
-
-                <form action="{{ route('assessments.process', $project->id) }}" method="POST">
-                    @csrf
-                    
-                    <div class="form-group mb-3">
-                        <label class="font-weight-bold">Pilih Keputusan Penilaian <span class="text-danger">*</span></label>
-                        <div class="btn-group-toggle d-flex" data-toggle="buttons">
-                            <label class="btn btn-outline-success flex-fill mr-1 font-weight-bold active">
-                                <input type="radio" name="decision" value="approved" checked> <i class="fas fa-check-circle mr-1"></i> SETUJU
-                            </label>
-                            <label class="btn btn-outline-warning flex-fill mr-1 font-weight-bold">
-                                <input type="radio" name="decision" value="revision"> <i class="fas fa-edit mr-1"></i> REVISI
-                            </label>
-                            <label class="btn btn-outline-danger flex-fill font-weight-bold">
-                                <input type="radio" name="decision" value="rejected"> <i class="fas fa-times-circle mr-1"></i> DITOLAK
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="font-weight-bold">Catatan Penilai / Alasan Decision <span class="text-danger">*</span></label>
-                        <textarea name="notes" class="form-control" rows="5" placeholder="Tuliskan catatan evaluasi, poin revisi yang wajib diperbaiki, atau alasan penolakan..." required></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm">
-                        <i class="fas fa-paper-plane mr-2"></i> Simpan Keputusan Penilaian
-                    </button>
-                </form>
-            </div>
-        </div>
+        <!-- Vue 3 Interactive Decision Component -->
+        <decision-modal 
+            action-url="{{ route('assessments.process', $project->id) }}" 
+            csrf-token="{{ csrf_token() }}"
+            class="mb-4"
+        ></decision-modal>
 
         <!-- History Log Card -->
         <div class="card card-outline card-secondary shadow-sm">
