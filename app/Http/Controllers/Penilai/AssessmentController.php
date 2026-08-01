@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class AssessmentController extends Controller
 {
@@ -19,7 +20,6 @@ class AssessmentController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Eager load applicant, documentType, and evaluator to prevent N+1 queries
         $query = Project::with(['applicant', 'documentType', 'evaluator'])
             ->where('status', '!=', Project::STATUS_DRAFT);
 
@@ -46,16 +46,19 @@ class AssessmentController extends Controller
         $projects = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();
         $documentTypes = DocumentType::where('is_active', true)->get();
 
-        return view('assessments.index', compact('projects', 'documentTypes'));
+        return Inertia::render('Assessments/Index', [
+            'projects' => $projects,
+            'documentTypes' => $documentTypes,
+            'filters' => $request->only(['search', 'status', 'document_type_id']),
+        ]);
     }
 
     public function review($id)
     {
-        // Eager load documentType, applicant, evaluator, documents with uploader, and assessmentLogs with user
         $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents.uploader', 'assessmentLogs.user'])
             ->findOrFail($id);
 
-        return view('assessments.review', compact('project'));
+        return Inertia::render('Assessments/Review', compact('project'));
     }
 
     public function processDecision(Request $request, $id)
@@ -102,7 +105,6 @@ class AssessmentController extends Controller
 
             $project->update($updateData);
 
-            // Create Assessment Audit Log
             AssessmentLog::create([
                 'project_id' => $project->id,
                 'user_id' => $user->id,
@@ -112,7 +114,6 @@ class AssessmentController extends Controller
                 'notes' => $validated['notes'],
             ]);
 
-            // Notify Applicant
             Notification::create([
                 'user_id' => $project->applicant_id,
                 'project_id' => $project->id,
@@ -133,7 +134,6 @@ class AssessmentController extends Controller
 
     public function history(Request $request)
     {
-        // Eager load nested project relationships (documentType, applicant, evaluator) and user
         $query = AssessmentLog::with(['project.documentType', 'project.applicant', 'project.evaluator', 'user']);
 
         if ($request->filled('search')) {
@@ -150,6 +150,9 @@ class AssessmentController extends Controller
 
         $logs = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('assessments.history', compact('logs'));
+        return Inertia::render('Assessments/History', [
+            'logs' => $logs,
+            'filters' => $request->only(['search', 'action']),
+        ]);
     }
 }

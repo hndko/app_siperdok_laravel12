@@ -7,7 +7,7 @@
           <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
         </li>
         <li class="nav-item d-none d-sm-inline-block">
-          <a :href="dashboardUrl" class="nav-link"><i class="fas fa-home mr-1"></i> Beranda</a>
+          <Link href="/dashboard" class="nav-link"><i class="fas fa-home mr-1"></i> Beranda</Link>
         </li>
       </ul>
 
@@ -22,7 +22,7 @@
           <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
             <span class="dropdown-item dropdown-header">Notifikasi Sistem</span>
             <div class="dropdown-divider"></div>
-            <a 
+            <Link 
               v-for="notif in notifications" 
               :key="notif.id" 
               :href="notif.project_id ? `/projects/${notif.project_id}` : '#'" 
@@ -30,31 +30,30 @@
             >
               <i :class="['fas fa-info-circle mr-2', `text-${notif.type}`]"></i> 
               <span class="text-wrap small">{{ notif.title }}</span>
-            </a>
-            <div v-if="!notifications.length" class="dropdown-item text-muted text-center">Tidak ada notifikasi baru</div>
+            </Link>
+            <div v-if="!notifications || !notifications.length" class="dropdown-item text-muted text-center">Tidak ada notifikasi baru</div>
           </div>
         </li>
 
         <!-- User Menu -->
         <li class="nav-item dropdown user-menu">
           <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0D8ABC&color=fff`" class="user-image img-circle elevation-2" alt="User Image">
-            <span class="d-none d-md-inline font-weight-bold">{{ user.name }}</span>
+            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="user-image img-circle elevation-2" alt="User Image">
+            <span class="d-none d-md-inline font-weight-bold">{{ user ? user.name : 'User' }}</span>
           </a>
           <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
             <li class="user-header bg-primary">
-              <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=fff&color=0D8ABC`" class="img-circle elevation-2" alt="User Image">
+              <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=fff&color=0D8ABC`" class="img-circle elevation-2" alt="User Image">
               <p>
-                {{ user.name }}
-                <small>{{ user.company_name || 'Pengguna Sistem' }}</small>
+                {{ user ? user.name : 'User' }}
+                <small>{{ user ? (user.company_name || 'Pengguna Sistem') : '' }}</small>
                 <span class="badge badge-light mt-1">{{ (userRole || 'USER').toUpperCase() }}</span>
               </p>
             </li>
             <li class="user-footer">
-              <form :action="logoutUrl" method="POST">
-                <input type="hidden" name="_token" :value="csrfToken">
-                <button type="submit" class="btn btn-danger btn-flat btn-block"><i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)</button>
-              </form>
+              <Link href="/logout" method="post" as="button" class="btn btn-danger btn-flat btn-block">
+                <i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)
+              </Link>
             </li>
           </ul>
         </li>
@@ -63,19 +62,19 @@
 
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
-      <a :href="dashboardUrl" class="brand-link text-center py-3">
+      <Link href="/dashboard" class="brand-link text-center py-3">
         <i class="fas fa-file-contract text-warning mr-2"></i>
         <span class="brand-text font-weight-bold">SI PERDOK</span>
-      </a>
+      </Link>
 
       <div class="sidebar">
         <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
           <div class="image">
-            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0D8ABC&color=fff`" class="img-circle elevation-2" alt="User Image">
+            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-white font-weight-bold">{{ user.name }}</a>
-            <span class="badge badge-success small"><i class="fas fa-circle text-xs mr-1"></i> Online (Vue 3)</span>
+            <a href="#" class="d-block text-white font-weight-bold">{{ user ? user.name : 'User' }}</a>
+            <span class="badge badge-success small"><i class="fas fa-circle text-xs mr-1"></i> Full Vue 3 SPA</span>
           </div>
         </div>
 
@@ -83,57 +82,57 @@
         <nav class="mt-2">
           <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
             <li class="nav-item">
-              <a href="/dashboard" class="nav-link" :class="{ active: currentPath.includes('/dashboard') }">
+              <Link href="/dashboard" class="nav-link" :class="{ active: currentPath.includes('/dashboard') }">
                 <i class="nav-icon fas fa-tachometer-alt"></i>
                 <p>Dashboard</p>
-              </a>
+              </Link>
             </li>
 
             <template v-if="isPemohon">
               <li class="nav-header">PERMOHONAN DOKUMEN</li>
               <li class="nav-item">
-                <a href="/projects/create" class="nav-link" :class="{ active: currentPath.includes('/projects/create') }">
+                <Link href="/projects/create" class="nav-link" :class="{ active: currentPath.includes('/projects/create') }">
                   <i class="nav-icon fas fa-plus-circle text-success"></i>
                   <p>Buat Pengajuan Baru</p>
-                </a>
+                </Link>
               </li>
               <li class="nav-item">
-                <a href="/projects" class="nav-link" :class="{ active: currentPath === '/projects' }">
+                <Link href="/projects" class="nav-link" :class="{ active: currentPath === '/projects' }">
                   <i class="nav-icon fas fa-folder-open text-info"></i>
                   <p>Daftar Permohonan Saya</p>
-                </a>
+                </Link>
               </li>
             </template>
 
             <template v-if="isPenilai || isAdmin">
               <li class="nav-header">PENILAIAN & EVALUASI</li>
               <li class="nav-item">
-                <a href="/assessments" class="nav-link" :class="{ active: currentPath === '/assessments' }">
+                <Link href="/assessments" class="nav-link" :class="{ active: currentPath === '/assessments' }">
                   <i class="nav-icon fas fa-tasks text-warning"></i>
                   <p>Penilaian Permohonan</p>
-                </a>
+                </Link>
               </li>
               <li class="nav-item">
-                <a href="/assessments/history" class="nav-link" :class="{ active: currentPath.includes('/assessments/history') }">
+                <Link href="/assessments/history" class="nav-link" :class="{ active: currentPath.includes('/assessments/history') }">
                   <i class="nav-icon fas fa-history text-cyan"></i>
                   <p>Histori Penilaian / Log</p>
-                </a>
+                </Link>
               </li>
             </template>
 
             <template v-if="isAdmin">
               <li class="nav-header">MASTER DATA & PENGATURAN</li>
               <li class="nav-item">
-                <a href="/master/users" class="nav-link" :class="{ active: currentPath.includes('/master/users') }">
+                <Link href="/master/users" class="nav-link" :class="{ active: currentPath.includes('/master/users') }">
                   <i class="nav-icon fas fa-users"></i>
                   <p>Manajemen User</p>
-                </a>
+                </Link>
               </li>
               <li class="nav-item">
-                <a href="/master/document-types" class="nav-link" :class="{ active: currentPath.includes('/master/document-types') }">
+                <Link href="/master/document-types" class="nav-link" :class="{ active: currentPath.includes('/master/document-types') }">
                   <i class="nav-icon fas fa-file-alt"></i>
                   <p>Jenis Dokumen</p>
-                </a>
+                </Link>
               </li>
             </template>
 
@@ -159,7 +158,7 @@
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="/dashboard">Beranda</a></li>
+                <li class="breadcrumb-item"><Link href="/dashboard">Beranda</Link></li>
                 <li class="breadcrumb-item active">{{ pageTitle }}</li>
               </ol>
             </div>
@@ -169,6 +168,19 @@
 
       <section class="content">
         <div class="container-fluid">
+          <div v-if="flash.success" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle mr-2"></i> {{ flash.success }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div v-if="flash.error" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle mr-2"></i> {{ flash.error }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
           <slot></slot>
         </div>
       </section>
@@ -176,7 +188,7 @@
 
     <footer class="main-footer">
       <div class="float-right d-none d-sm-inline">
-        <b>Frontend</b> Vue 3 SFC + AdminLTE 3.2
+        <b>Frontend</b> Vue 3 SPA (Inertia.js) + AdminLTE 3.2
       </div>
       <strong>&copy; 2026 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan.</strong> All rights reserved.
     </footer>
@@ -185,22 +197,22 @@
 
 <script setup>
 import { computed } from 'vue';
+import { usePage, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
-  user: { type: Object, required: true },
-  userRole: { type: String, default: 'pemohon' },
-  pageTitle: { type: String, default: 'Dashboard' },
-  csrfToken: { type: String, required: true },
-  unreadNotificationsCount: { type: Number, default: 0 },
-  notifications: { type: Array, default: () => [] }
+  pageTitle: { type: String, default: 'Dashboard' }
 });
 
-const dashboardUrl = '/dashboard';
-const logoutUrl = '/logout';
+const page = usePage();
+const user = computed(() => page.props.auth ? page.props.auth.user : null);
+const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
+const notifications = computed(() => page.props.notifications || []);
+const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount || 0);
+const flash = computed(() => page.props.flash || {});
 
-const isPemohon = computed(() => props.userRole === 'pemohon');
-const isPenilai = computed(() => props.userRole === 'penilai');
-const isAdmin = computed(() => props.userRole === 'admin');
+const isPemohon = computed(() => userRole.value === 'pemohon');
+const isPenilai = computed(() => userRole.value === 'penilai');
+const isAdmin = computed(() => userRole.value === 'admin');
 
 const currentPath = computed(() => window.location.pathname);
 </script>

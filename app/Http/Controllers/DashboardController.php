@@ -6,8 +6,8 @@ use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -25,7 +25,6 @@ class DashboardController extends Controller
             $pendingCount = Project::whereIn('status', ['submitted', 'in_review'])->count();
             $draftCount = Project::where('status', 'draft')->count();
 
-            // Eager load applicant, evaluator, and documentType to prevent N+1 query issues
             $recentProjects = Project::with(['applicant', 'evaluator', 'documentType'])
                 ->orderBy('updated_at', 'desc')
                 ->limit(10)
@@ -39,7 +38,6 @@ class DashboardController extends Controller
             $pendingCount = Project::where('applicant_id', $user->id)->whereIn('status', ['submitted', 'in_review'])->count();
             $draftCount = Project::where('applicant_id', $user->id)->where('status', 'draft')->count();
 
-            // Eager load applicant, evaluator, and documentType for Pemohon view
             $recentProjects = Project::with(['applicant', 'evaluator', 'documentType'])
                 ->where('applicant_id', $user->id)
                 ->orderBy('updated_at', 'desc')
@@ -74,7 +72,6 @@ class DashboardController extends Controller
         });
         $chartValues = $monthlyChartData->pluck('count');
 
-        // Status doughnut chart data
         $statusCounts = [
             'Draft' => $draftCount,
             'Diproses / Dalam Penilaian' => $pendingCount,
@@ -83,7 +80,7 @@ class DashboardController extends Controller
             'Ditolak' => $rejectedCount,
         ];
 
-        return view('dashboard.index', compact(
+        return Inertia::render('Dashboard', compact(
             'totalProjects',
             'approvedCount',
             'revisionCount',

@@ -13,7 +13,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthApiController::class, 'logout']);
 
         Route::get('/projects', [ProjectApiController::class, 'index']);
+        Route::post('/projects', [ProjectApiController::class, 'store']);
         Route::get('/projects/{id}', [ProjectApiController::class, 'show']);
+
         Route::post('/assessments/{id}', [ProjectApiController::class, 'assess']);
+        Route::get('/assessments/history', [ProjectApiController::class, 'history']);
+
+        Route::get('/document-types', [ProjectApiController::class, 'documentTypes']);
     });
 });

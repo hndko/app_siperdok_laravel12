@@ -5,14 +5,13 @@ namespace App\Http\Controllers\Pemohon;
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentLog;
 use App\Models\DocumentType;
-use App\Models\Notification;
 use App\Models\Project;
 use App\Models\ProjectDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
@@ -21,7 +20,6 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Eager load applicant, documentType, and evaluator to prevent N+1 query overhead
         $query = Project::with(['applicant', 'documentType', 'evaluator'])
             ->where('applicant_id', $user->id);
 
@@ -44,13 +42,17 @@ class ProjectController extends Controller
         $projects = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $documentTypes = DocumentType::where('is_active', true)->get();
 
-        return view('projects.index', compact('projects', 'documentTypes'));
+        return Inertia::render('Projects/Index', [
+            'projects' => $projects,
+            'documentTypes' => $documentTypes,
+            'filters' => $request->only(['search', 'status', 'document_type_id']),
+        ]);
     }
 
     public function create()
     {
         $documentTypes = DocumentType::where('is_active', true)->get();
-        return view('projects.create', compact('documentTypes'));
+        return Inertia::render('Projects/Create', compact('documentTypes'));
     }
 
     public function store(Request $request)
@@ -62,7 +64,7 @@ class ProjectController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'document_type_id' => ['required', 'exists:document_types,id'],
             'description' => ['nullable', 'string'],
-            'document' => ['required', 'file', 'mimes:pdf,docx,doc,png,jpg,jpeg', 'max:10240'], // 10MB
+            'document' => ['required', 'file', 'mimes:pdf,docx,doc,png,jpg,jpeg', 'max:10240'],
             'submit_action' => ['required', 'in:draft,submit'],
         ]);
 
@@ -81,7 +83,6 @@ class ProjectController extends Controller
                 'submitted_at' => ($status === Project::STATUS_SUBMITTED) ? now() : null,
             ]);
 
-            // Save File Upload
             if ($request->hasFile('document')) {
                 $file = $request->file('document');
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -99,7 +100,6 @@ class ProjectController extends Controller
                 ]);
             }
 
-            // Log activity
             AssessmentLog::create([
                 'project_id' => $project->id,
                 'user_id' => $user->id,
@@ -129,16 +129,14 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Eager load all related nested models: documentType, applicant, evaluator, documents with uploader, assessmentLogs with user
         $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents.uploader', 'assessmentLogs.user'])
             ->findOrFail($id);
 
-        // Security check: Pemohon can only view their own projects unless they are evaluator/admin
         if (!$user->hasRole('admin') && !$user->hasRole('penilai') && $project->applicant_id !== $user->id) {
             abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
         }
 
-        return view('projects.show', compact('project'));
+        return Inertia::render('Projects/Show', compact('project'));
     }
 
     public function edit($id)
@@ -146,14 +144,12 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Eager load documentType and documents with uploader
         $project = Project::with(['documentType', 'documents.uploader', 'assessmentLogs.user'])->findOrFail($id);
 
         if ($project->applicant_id !== $user->id && !$user->hasRole('admin')) {
             abort(403, 'Akses ditolak.');
         }
 
-        // Pemohon can only edit if status is draft or revision
         if (!in_array($project->status, [Project::STATUS_DRAFT, Project::STATUS_REVISION])) {
             return redirect()->route('projects.show', $id)
                 ->with('error', 'Permohonan dokumen yang sudah dikirim atau dinilai tidak dapat diubah.');
@@ -161,7 +157,7 @@ class ProjectController extends Controller
 
         $documentTypes = DocumentType::where('is_active', true)->get();
 
-        return view('projects.edit', compact('project', 'documentTypes'));
+        return Inertia::render('Projects/Edit', compact('project', 'documentTypes'));
     }
 
     public function update(Request $request, $id)
@@ -201,7 +197,6 @@ class ProjectController extends Controller
                 'submitted_at' => ($newStatus === Project::STATUS_SUBMITTED) ? now() : $project->submitted_at,
             ]);
 
-            // Save new document version if file provided
             if ($request->hasFile('document')) {
                 $file = $request->file('document');
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -221,7 +216,6 @@ class ProjectController extends Controller
                 ]);
             }
 
-            // Log activity
             $action = ($prevStatus === Project::STATUS_REVISION && $newStatus === Project::STATUS_SUBMITTED) 
                 ? 'resubmit' 
                 : (($newStatus === Project::STATUS_SUBMITTED) ? 'submit' : 'update_draft');

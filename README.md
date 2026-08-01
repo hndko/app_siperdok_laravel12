@@ -1,6 +1,6 @@
 # 📄 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan
 
-SIPERDOK adalah aplikasi web berbasis Laravel 12, Vue 3, dan AdminLTE 3.2.0 yang dirancang untuk mengelola seluruh tahapan permohonan dokumen kelayakan lingkungan hidup secara terstruktur, transparan, dan berkinerja tinggi.
+SIPERDOK adalah aplikasi web berbasis **Laravel 12 (Backend REST & Inertia Engine)**, **Vue 3 (100% Full Single Page Application - SPA)**, dan AdminLTE 3.2.0 yang dirancang untuk mengelola seluruh tahapan permohonan dokumen kelayakan lingkungan hidup secara terstruktur, transparan, dan berkinerja tinggi.
 
 ---
 
@@ -31,8 +31,9 @@ Seiring pesatnya pertumbuhan pengajuan izin kelayakan setiap tahunnya, instansi 
 
 ### 🎯 Fitur Utama
 
-- 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`) dengan layout terpisah `app-auth` & `app-modules`.
-- 💚 **Frontend Vue 3 Reaktif**: Komponen reaktif Vue 3 Single File Components (`AppLayout.vue`, `DashboardPage.vue`, `ProjectIndexPage.vue`, `ProjectShowPage.vue`, `StatusBadge.vue`, `DecisionModal.vue`) terintegrasi dengan Vite bundler.
+- 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`).
+- 💚 **100% Full Vue 3 Single Page Application (SPA)**: Seluruh tampilan antarmuka dibangun menggunakan Vue 3 Single File Components (`Auth/Login.vue`, `Auth/Register.vue`, `Dashboard.vue`, `Projects/Index.vue`, `Projects/Create.vue`, `Projects/Edit.vue`, `Projects/Show.vue`, `Assessments/Index.vue`, `Assessments/Review.vue`, `Assessments/History.vue`, `Master/Users.vue`, `Master/DocumentTypes.vue`) tanpa dependensi template Blade lama.
+- 🌐 **RESTful API & Sanctum Authentication**: Dilengkapi dengan endpoint API RESTful (`/api/v1/...`) untuk login, manajemen permohonan, penilaian, histori audit log, dan jenis dokumen.
 - 📁 **Manajemen Permohonan & Berkas**: Pembuatan draft, upload dokumen dengan validasi format & ukuran (PDF/Docx/Image max 10MB), serta versioning berkas permohonan.
 - ⚖️ **Modul Penilaian & Keputusan**: Panel penilai untuk keputusan **Setuju (Approved)**, **Revisi (Revision)**, dan **Ditolak (Rejected)** dilengkapi catatan evaluasi dan notifikasi otomatis.
 - 📑 **Audit Trail & Histori Penilaian**: Catatan riwayat kronologis lengkap untuk setiap aksi perubahan status permohonan.
@@ -88,7 +89,7 @@ Ikuti langkah-langkah berbasis perintah terminal berikut untuk memasang proyek d
    npm install
    ```
 
-3. **Kompilasi Aset Frontend (Vue 3 + Vite)**
+3. **Kompilasi Aset Frontend Vue 3 SPA (Vite)**
    ```bash
    npm run build
    ```
@@ -119,8 +120,8 @@ Password default untuk seluruh akun demo adalah: **`password`**
 
 | Role User | Email Login | Hak Akses Utama |
 | :--- | :--- | :--- |
-| 🧑‍💻 **Pemohon** | `pemohon@example.com` | Dashboard Pemohon, Pengajuan Proyek Baru, Upload Berkas, Edit Draft, Submit Ulang Revisi, Unduh Sertifikat PDF. |
-| 👨‍⚖️ **Penilai** | `penilai@example.com` | Dashboard Penilai, Review Permohonan (Vue 3 Component), Input Decision (Approve / Revision / Reject), Catatan Evaluasi, Audit Log. |
+| 🧑‍💻 **Pemohon** | `pemohon@example.com` | Dashboard Pemohon (Vue 3 SPA), Pengajuan Proyek Baru, Upload Berkas, Edit Draft, Submit Ulang Revisi, Unduh Sertifikat PDF. |
+| 👨‍⚖️ **Penilai** | `penilai@example.com` | Dashboard Penilai (Vue 3 SPA), Review Permohonan (Vue 3 Component), Input Decision (Approve / Revision / Reject), Catatan Evaluasi, Audit Log. |
 | 🛡️ **Admin** | `admin@example.com` | Master Data Users, Master Jenis Dokumen, Laporan Global & Dashboard Monitoring. |
 
 ### 💻 Menjalankan Server Aplikasi
@@ -152,11 +153,27 @@ curl -X POST http://127.0.0.1:8000/api/v1/login \
 curl -X GET http://127.0.0.1:8000/api/v1/projects \
      -H "Authorization: Bearer <TOKEN_ANDA>"
 
-# 3. Memproses Penilaian Dokumen (Role Penilai/Admin)
+# 3. Membuat Permohonan Dokumen Baru
+curl -X POST http://127.0.0.1:8000/api/v1/projects \
+     -H "Authorization: Bearer <TOKEN_ANDA>" \
+     -F "title=Pembangunan Gedung Baru" \
+     -F "document_type_id=1" \
+     -F "submit_action=submit" \
+     -F "document=@/path/to/file.pdf"
+
+# 4. Memproses Penilaian Dokumen (Role Penilai/Admin)
 curl -X POST http://127.0.0.1:8000/api/v1/assessments/1 \
      -H "Authorization: Bearer <TOKEN_ANDA>" \
      -H "Content-Type: application/json" \
      -d '{"decision":"approved","notes":"Dokumen disetujui."}'
+
+# 5. Mendapatkan Histori Log Penilaian
+curl -X GET http://127.0.0.1:8000/api/v1/assessments/history \
+     -H "Authorization: Bearer <TOKEN_ANDA>"
+
+# 6. Mendapatkan Master Jenis Dokumen
+curl -X GET http://127.0.0.1:8000/api/v1/document-types \
+     -H "Authorization: Bearer <TOKEN_ANDA>"
 ```
 
 ### 🐳 Menjalankan via Docker

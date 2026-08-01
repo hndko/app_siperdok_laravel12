@@ -1,20 +1,19 @@
 import './bootstrap';
-import { createApp } from 'vue';
-
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
 import StatusBadge from './components/StatusBadge.vue';
 import DecisionModal from './components/DecisionModal.vue';
 
-import DashboardPage from './pages/dashboard/DashboardPage.vue';
-import ProjectIndexPage from './pages/projects/ProjectIndexPage.vue';
-import ProjectShowPage from './pages/projects/ProjectShowPage.vue';
-
-const app = createApp({});
-
-app.component('status-badge', StatusBadge);
-app.component('decision-modal', DecisionModal);
-
-app.component('dashboard-page', DashboardPage);
-app.component('project-index-page', ProjectIndexPage);
-app.component('project-show-page', ProjectShowPage);
-
-app.mount('#vue-app');
+createInertiaApp({
+  resolve: (name) => {
+    const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
+    return pages[`./Pages/${name}.vue`].default;
+  },
+  setup({ el, App, props, plugin }) {
+    const vueApp = createApp({ render: () => h(App, props) });
+    vueApp.use(plugin);
+    vueApp.component('status-badge', StatusBadge);
+    vueApp.component('decision-modal', DecisionModal);
+    vueApp.mount(el);
+  },
+});

@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentLog;
+use App\Models\DocumentType;
 use App\Models\Notification;
 use App\Models\Project;
-
+use App\Models\ProjectDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,73 @@ class ProjectApiController extends Controller
             'status' => 'success',
             'data' => $projects,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'document_type_id' => 'required|exists:document_types,id',
+            'description' => 'nullable|string',
+            'document' => 'required|file|mimes:pdf,docx,doc,png,jpg,jpeg|max:10240',
+            'submit_action' => 'required|in:draft,submit',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $projectNum = 'PRJ-' . date('Ym') . '-' . str_pad(Project::max('id') + 1, 5, '0', STR_PAD_LEFT);
+            $status = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : Project::STATUS_DRAFT;
+
+            $project = Project::create([
+                'project_number' => $projectNum,
+                'title' => $validated['title'],
+                'applicant_id' => $user->id,
+                'document_type_id' => $validated['document_type_id'],
+                'status' => $status,
+                'description' => $validated['description'] ?? null,
+                'submitted_at' => ($status === Project::STATUS_SUBMITTED) ? now() : null,
+            ]);
+
+            if ($request->hasFile('document')) {
+                $file = $request->file('document');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
+
+                ProjectDocument::create([
+                    'project_id' => $project->id,
+                    'document_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_name' => $filename,
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'version' => 1,
+                    'uploaded_by' => $user->id,
+                ]);
+            }
+
+            AssessmentLog::create([
+                'project_id' => $project->id,
+                'user_id' => $user->id,
+                'action' => ($status === Project::STATUS_SUBMITTED) ? 'submit' : 'create_draft',
+                'previous_status' => null,
+                'new_status' => $status,
+                'notes' => 'Pengajuan dokumen kelayakan melalui API.',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Permohonan dokumen berhasil disimpan.',
+                'data' => $project->load(['documentType', 'applicant', 'documents']),
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function show(Request $request, $id)
@@ -104,5 +172,20 @@ class ProjectApiController extends Controller
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function documentTypes()
+    {
+        $documentTypes = DocumentType::where('is_active', true)->get();
+        return response()->json(['status' => 'success', 'data' => $documentTypes]);
+    }
+
+    public function history(Request $request)
+    {
+        $logs = AssessmentLog::with(['project.documentType', 'project.applicant', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json(['status' => 'success', 'data' => $logs]);
     }
 }
