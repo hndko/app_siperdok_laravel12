@@ -91,12 +91,11 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 
 const props = defineProps({
-  projects: { type: Object, required: true },
+  projects: { type: Object, default: () => ({ data: [] }) },
   documentTypes: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) }
 });

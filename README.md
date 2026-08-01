@@ -83,7 +83,7 @@ Bahasa pemrograman dan framework utama:
 - 🚀 **Laravel `^12.0`** sebagai framework backend.
 - 🟢 **JavaScript ES Module** sebagai bahasa frontend.
 - 🖼️ **Vue `^3.5`** sebagai framework frontend.
-- 🔁 **Inertia.js** sebagai shell render halaman Vue, sedangkan data dan aksi bisnis berjalan melalui REST API.
+- 🧭 **Vue Router** untuk routing halaman SPA di sisi frontend.
 - ⚡ **Vite `^7.0`** untuk bundling aset frontend.
 
 Library backend penting:
@@ -233,7 +233,8 @@ Aturan struktur:
 
 - `Auth` berada di luar `Modules` karena autentikasi adalah domain khusus.
 - Semua halaman fitur seperti dashboard, project, assessment, export, dan master data berada di dalam `Modules`.
-- `routes/web.php` hanya melakukan mapping path SPA ke komponen Vue tersebut.
+- Routing halaman dikelola oleh Vue Router di `resources/js/router.js`.
+- `routes/web.php` hanya menyajikan shell `resources/views/app.blade.php` sebagai fallback SPA.
 - Komponen Vue mengambil data, memproses filter, submit form, logout, dan export melalui REST API `/api/v1`.
 
 ---

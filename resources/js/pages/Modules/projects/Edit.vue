@@ -60,33 +60,32 @@
 </template>
 
 <script setup>
-import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
-  project: { type: Object, required: true },
+  project: { type: Object, default: () => ({}) },
   documentTypes: { type: Array, default: () => [] }
 });
 const project = ref(props.project);
 const documentTypes = ref(props.documentTypes);
+const route = useRoute();
+const router = useRouter();
 
-const page = usePage();
-const errors = computed(() => page.props.errors || {});
-
-const form = useForm({
+const form = reactive({
   _method: 'PUT',
   title: props.project.title || '',
   document_type_id: props.project.document_type_id || '',
   description: props.project.description || '',
   document: null,
   submit_action: 'submit',
+  processing: false,
 });
 
 const loadProject = async () => {
-  const segments = window.location.pathname.split('/').filter(Boolean);
-  const id = segments[1];
+  const id = route.params.id;
   const response = await window.axios.get(`/api/v1/projects/${id}`);
   project.value = response.data.data;
   form.title = project.value.title || '';
@@ -118,6 +117,7 @@ const submitProject = async (action) => {
     return;
   }
 
+  form.processing = true;
   const payload = new FormData();
   form.submit_action = action;
   payload.append('title', form.title);
@@ -133,12 +133,14 @@ const submitProject = async (action) => {
     await window.axios.post(`/api/v1/projects/${project.value.id}`, payload);
     toast('success', action === 'draft' ? 'Draft berhasil diperbarui.' : 'Permohonan berhasil dikirim ulang.');
     setTimeout(() => {
-      window.location.href = `/projects/${project.value.id}`;
+      router.push(`/projects/${project.value.id}`);
     }, 600);
   } catch (error) {
     apiErrorMessages(error, 'Permohonan gagal diperbarui.')
       .slice(0, 3)
       .forEach((message) => toast('error', message));
+  } finally {
+    form.processing = false;
   }
 };
 
@@ -155,14 +157,4 @@ const submit = () => {
 onMounted(async () => {
   await Promise.all([loadProject(), loadDocumentTypes()]);
 });
-
-watch(
-  errors,
-  (value) => {
-    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
-      toast('error', message);
-    });
-  },
-  { immediate: true }
-);
 </script>

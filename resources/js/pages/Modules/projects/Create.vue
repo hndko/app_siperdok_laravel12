@@ -55,8 +55,8 @@
 </template>
 
 <script setup>
-import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
@@ -64,16 +64,15 @@ const props = defineProps({
   documentTypes: { type: Array, default: () => [] }
 });
 const documentTypes = ref(props.documentTypes);
+const router = useRouter();
 
-const page = usePage();
-const errors = computed(() => page.props.errors || {});
-
-const form = useForm({
+const form = reactive({
   title: '',
   document_type_id: '',
   description: '',
   document: null,
   submit_action: 'submit',
+  processing: false,
 });
 
 const handleFile = (e) => {
@@ -95,6 +94,7 @@ const submitProject = async (action) => {
     return;
   }
 
+  form.processing = true;
   const payload = new FormData();
   form.submit_action = action;
   payload.append('title', form.title);
@@ -107,12 +107,14 @@ const submitProject = async (action) => {
     const response = await window.axios.post('/api/v1/projects', payload);
     toast('success', action === 'draft' ? 'Draft berhasil disimpan.' : 'Permohonan berhasil dikirim.');
     setTimeout(() => {
-      window.location.href = `/projects/${response.data.data.id}`;
+      router.push(`/projects/${response.data.data.id}`);
     }, 600);
   } catch (error) {
     apiErrorMessages(error, 'Permohonan gagal disimpan.')
       .slice(0, 3)
       .forEach((message) => toast('error', message));
+  } finally {
+    form.processing = false;
   }
 };
 
@@ -130,14 +132,4 @@ onMounted(async () => {
   const response = await window.axios.get('/api/v1/document-types');
   documentTypes.value = response.data.data || [];
 });
-
-watch(
-  errors,
-  (value) => {
-    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
-      toast('error', message);
-    });
-  },
-  { immediate: true }
-);
 </script>

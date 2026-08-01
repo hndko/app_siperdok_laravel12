@@ -91,14 +91,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import { apiErrorMessage, toast } from '../../../lib/feedback';
 
 const props = defineProps({
-  project: { type: Object, required: true }
+  project: { type: Object, default: () => ({}) }
 });
 
+const route = useRoute();
+const project = ref(props.project);
 const year = computed(() => new Date().getFullYear());
 
 const printCertificate = () => {
@@ -107,13 +110,13 @@ const printCertificate = () => {
 
 const downloadCertificate = async () => {
   try {
-    const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
+    const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
       responseType: 'blob',
     });
     const url = URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
+    link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
     link.click();
     URL.revokeObjectURL(url);
     toast('success', 'Surat pengesahan berhasil diunduh.');
@@ -122,11 +125,20 @@ const downloadCertificate = async () => {
   }
 };
 
+const loadProject = async () => {
+  const response = await window.axios.get(`/api/v1/projects/${route.params.id}`);
+  project.value = response.data.data;
+};
+
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 };
+
+onMounted(() => {
+  loadProject();
+});
 </script>
 
 <style scoped>

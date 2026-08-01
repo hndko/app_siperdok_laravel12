@@ -142,13 +142,11 @@
 </template>
 
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { apiErrorMessage, toast } from '../../lib/feedback';
 
-const page = usePage();
-const flash = computed(() => page.props.flash || {});
-const errors = computed(() => page.props.errors || {});
+const router = useRouter();
 const showDemoAccounts = ref(false);
 const processing = ref(false);
 
@@ -177,7 +175,7 @@ const submit = async () => {
     window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
     toast('success', 'Login berhasil. Mengarahkan ke dashboard.');
     setTimeout(() => {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     }, 600);
   } catch (error) {
     toast('error', apiErrorMessage(error, 'Login gagal. Periksa kembali email dan password.'));
@@ -185,19 +183,6 @@ const submit = async () => {
     processing.value = false;
   }
 };
-
-watch(
-  flash,
-  (value) => {
-    if (value.info) {
-      toast('info', value.info);
-    }
-    if (value.error || errors.value.email) {
-      toast('error', value.error || errors.value.email);
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <style src="../../../css/auth/login.css" scoped></style>

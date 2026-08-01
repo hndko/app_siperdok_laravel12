@@ -1,19 +1,18 @@
 import './bootstrap';
 import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { RouterView } from 'vue-router';
+import SpaLink from './components/SpaLink.vue';
 import StatusBadge from './components/StatusBadge.vue';
 import DecisionModal from './components/DecisionModal.vue';
+import router from './router';
 
-createInertiaApp({
-  resolve: (name) => {
-    const pages = import.meta.glob('./pages/**/*.vue', { eager: true });
-    return pages[`./pages/${name}.vue`].default;
-  },
-  setup({ el, App, props, plugin }) {
-    const vueApp = createApp({ render: () => h(App, props) });
-    vueApp.use(plugin);
-    vueApp.component('status-badge', StatusBadge);
-    vueApp.component('decision-modal', DecisionModal);
-    vueApp.mount(el);
-  },
-});
+const App = {
+  render: () => h(RouterView),
+};
+
+createApp(App)
+  .use(router)
+  .component('Link', SpaLink)
+  .component('status-badge', StatusBadge)
+  .component('decision-modal', DecisionModal)
+  .mount('#app');

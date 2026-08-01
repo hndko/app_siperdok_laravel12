@@ -166,28 +166,32 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { reactive } from 'vue';
+import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 import { apiErrorMessage, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
-  project: { type: Object, required: true },
+  project: { type: Object, default: () => ({}) },
   canStartReview: { type: Boolean, default: false },
   canAssess: { type: Boolean, default: false }
 });
 const project = ref(props.project);
 const currentRole = ref('pemohon');
+const route = useRoute();
 const canStartReview = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'submitted');
 const canAssess = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
 
-const startReviewForm = useForm({
+const startReviewForm = reactive({
   notes: '',
+  processing: false,
 });
 
-const form = useForm({
+const form = reactive({
   decision: 'approved',
   notes: '',
+  processing: false,
 });
 
 const startReview = async () => {
@@ -203,6 +207,7 @@ const startReview = async () => {
     return;
   }
 
+  startReviewForm.processing = true;
   try {
     await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
       notes: startReviewForm.notes,
@@ -211,6 +216,8 @@ const startReview = async () => {
     toast('success', 'Review dokumen berhasil dimulai.');
   } catch (error) {
     toast('error', apiErrorMessage(error, 'Review dokumen gagal dimulai.'));
+  } finally {
+    startReviewForm.processing = false;
   }
 };
 
@@ -232,6 +239,7 @@ const submitDecision = async () => {
     return;
   }
 
+  form.processing = true;
   try {
     await window.axios.post(`/api/v1/assessments/${project.value.id}`, {
       decision: form.decision,
@@ -242,6 +250,8 @@ const submitDecision = async () => {
     toast('success', 'Keputusan penilaian berhasil disimpan.');
   } catch (error) {
     toast('error', apiErrorMessage(error, 'Keputusan penilaian gagal disimpan.'));
+  } finally {
+    form.processing = false;
   }
 };
 
@@ -252,8 +262,7 @@ const formatDate = (dateStr) => {
 };
 
 const loadProject = async () => {
-  const segments = window.location.pathname.split('/').filter(Boolean);
-  const id = segments[1];
+  const id = route.params.id;
   const response = await window.axios.get(`/api/v1/projects/${id}`);
   project.value = response.data.data;
 };

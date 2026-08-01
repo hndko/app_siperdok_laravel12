@@ -130,8 +130,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { onMounted, ref } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 
@@ -148,8 +147,7 @@ const props = defineProps({
   statusCounts: { type: Object, default: () => ({}) }
 });
 
-const page = usePage();
-const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
+const userRole = ref('pemohon');
 const totalProjects = ref(props.totalProjects);
 const approvedCount = ref(props.approvedCount);
 const revisionCount = ref(props.revisionCount);
@@ -233,8 +231,13 @@ const loadDashboard = async () => {
   statusCounts.value = data.status_counts || {};
 };
 
+const loadMe = async () => {
+  const response = await window.axios.get('/api/v1/me');
+  userRole.value = response.data.data.role || 'pemohon';
+};
+
 onMounted(async () => {
-  await loadDashboard();
+  await Promise.all([loadDashboard(), loadMe()]);
   renderCharts();
 });
 </script>

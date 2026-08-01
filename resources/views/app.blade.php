@@ -14,9 +14,8 @@
     <script src="{{ asset('assets/dist/js/adminlte.min.js') }}"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @inertiaHead
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
-    @inertia
+    <div id="app"></div>
 </body>
 </html>

@@ -71,7 +71,7 @@ import { onMounted, reactive, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
-  users: { type: Object, required: true },
+  users: { type: Object, default: () => ({ data: [] }) },
   filters: { type: Object, default: () => ({}) }
 });
 const users = ref(props.users);

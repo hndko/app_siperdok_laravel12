@@ -155,12 +155,11 @@
 </template>
 
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { apiErrorMessages, toast } from '../../lib/feedback';
 
-const page = usePage();
-const errors = computed(() => page.props.errors || {});
+const router = useRouter();
 const processing = ref(false);
 
 const form = reactive({
@@ -183,7 +182,7 @@ const submit = async () => {
     window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
     toast('success', 'Registrasi berhasil. Mengarahkan ke dashboard.');
     setTimeout(() => {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     }, 600);
   } catch (error) {
     apiErrorMessages(error, 'Registrasi gagal. Periksa kembali data yang diisi.')
@@ -193,16 +192,6 @@ const submit = async () => {
     processing.value = false;
   }
 };
-
-watch(
-  errors,
-  (value) => {
-    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
-      toast('error', message);
-    });
-  },
-  { immediate: true }
-);
 </script>
 
 <style src="../../../css/auth/register.css" scoped></style>

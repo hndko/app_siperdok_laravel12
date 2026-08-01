@@ -112,23 +112,24 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 import { apiErrorMessage, toast } from '../../../lib/feedback';
 
 const props = defineProps({
-  project: { type: Object, required: true }
+  project: { type: Object, default: () => ({}) }
 });
 
 const project = ref(props.project);
 const currentUser = ref(null);
 const currentRole = ref('pemohon');
+const route = useRoute();
 const user = computed(() => currentUser.value);
 const userRole = computed(() => currentRole.value);
 
 const loadProject = async () => {
-  const id = window.location.pathname.split('/').filter(Boolean).at(-1);
+  const id = route.params.id;
   const response = await window.axios.get(`/api/v1/projects/${id}`);
   project.value = response.data.data;
 };

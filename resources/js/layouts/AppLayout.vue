@@ -181,7 +181,7 @@
 
     <footer class="main-footer">
       <div class="float-right d-none d-sm-inline">
-        <b>Frontend</b> Vue 3 SPA (Inertia.js) + AdminLTE 3.2
+        <b>Frontend</b> Vue 3 SPA + Vue Router + AdminLTE 3.2
       </div>
       <strong>&copy; 2026 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan.</strong> All rights reserved.
     </footer>
@@ -189,30 +189,30 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
-import { usePage, Link, router } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { apiErrorMessage, confirmAction, toast } from '../lib/feedback';
 
 const props = defineProps({
   pageTitle: { type: String, default: 'Dashboard' }
 });
 
-const page = usePage();
+const route = useRoute();
+const router = useRouter();
 const apiUser = ref(null);
 const apiRole = ref(null);
 const apiNotifications = ref([]);
 const apiUnreadNotificationsCount = ref(0);
-const user = computed(() => apiUser.value || (page.props.auth ? page.props.auth.user : null));
-const userRole = computed(() => apiRole.value || (page.props.auth ? page.props.auth.role : 'pemohon'));
-const notifications = computed(() => apiNotifications.value.length ? apiNotifications.value : (page.props.notifications || []));
-const unreadNotificationsCount = computed(() => apiUnreadNotificationsCount.value || page.props.unreadNotificationsCount || 0);
-const flash = computed(() => page.props.flash || {});
+const user = computed(() => apiUser.value);
+const userRole = computed(() => apiRole.value || 'pemohon');
+const notifications = computed(() => apiNotifications.value);
+const unreadNotificationsCount = computed(() => apiUnreadNotificationsCount.value);
 
 const isPemohon = computed(() => userRole.value === 'pemohon');
 const isPenilai = computed(() => userRole.value === 'penilai');
 const isAdmin = computed(() => userRole.value === 'admin');
 
-const currentPath = computed(() => window.location.pathname);
+const currentPath = computed(() => route.path);
 
 const initAdminLTEWidgets = () => {
   if (typeof $ !== 'undefined') {
@@ -239,7 +239,7 @@ const loadCurrentUser = async () => {
     apiUnreadNotificationsCount.value = response.data.data.unread_notifications_count || 0;
   } catch {
     localStorage.removeItem('siperdok_token');
-    window.location.href = '/login';
+    router.push('/login');
   }
 };
 
@@ -260,7 +260,7 @@ const logout = async () => {
   } finally {
     localStorage.removeItem('siperdok_token');
     delete window.axios.defaults.headers.common.Authorization;
-    window.location.href = '/login';
+    router.push('/login');
   }
 };
 
@@ -284,21 +284,8 @@ const downloadExport = async (type) => {
 onMounted(() => {
   loadCurrentUser();
   initAdminLTEWidgets();
-  router.on('navigate', () => {
+  router.afterEach(() => {
     setTimeout(initAdminLTEWidgets, 100);
   });
 });
-
-watch(
-  flash,
-  (value) => {
-    if (value.success) {
-      toast('success', value.success);
-    }
-    if (value.error) {
-      toast('error', value.error);
-    }
-  },
-  { immediate: true }
-);
 </script>

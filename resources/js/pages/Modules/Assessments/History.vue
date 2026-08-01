@@ -73,11 +73,10 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
-  logs: { type: Object, required: true },
+  logs: { type: Object, default: () => ({ data: [] }) },
   filters: { type: Object, default: () => ({}) }
 });
 const logs = ref(props.logs);
