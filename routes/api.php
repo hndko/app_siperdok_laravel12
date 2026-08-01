@@ -3,9 +3,9 @@
 use App\Http\Controllers\Api\Modules\Assessments\HistoryApiController;
 use App\Http\Controllers\Api\Modules\Assessments\StartReviewApiController;
 use App\Http\Controllers\Api\Modules\Assessments\StoreAssessmentApiController;
-use App\Http\Controllers\Api\Modules\Auth\LoginApiController;
-use App\Http\Controllers\Api\Modules\Auth\LogoutApiController;
-use App\Http\Controllers\Api\Modules\Auth\RegisterApiController;
+use App\Http\Controllers\Api\Auth\LoginApiController;
+use App\Http\Controllers\Api\Auth\LogoutApiController;
+use App\Http\Controllers\Api\Auth\RegisterApiController;
 use App\Http\Controllers\Api\Modules\DocumentTypes\IndexDocumentTypeApiController;
 use App\Http\Controllers\Api\Modules\Projects\IndexProjectApiController;
 use App\Http\Controllers\Api\Modules\Projects\ShowProjectApiController;
