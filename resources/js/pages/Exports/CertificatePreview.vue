@@ -11,9 +11,9 @@
               <button @click="printCertificate" class="btn btn-primary btn-sm mr-2 font-weight-bold">
                 <i class="fas fa-print mr-1"></i> Cetak Surat (Print)
               </button>
-              <a :href="`/export/projects/${project.id}/certificate`" class="btn btn-success btn-sm font-weight-bold">
+              <button type="button" class="btn btn-success btn-sm font-weight-bold" @click="downloadCertificate">
                 <i class="fas fa-file-pdf mr-1"></i> Unduh File PDF
-              </a>
+              </button>
             </div>
           </div>
 
@@ -102,6 +102,18 @@ const year = computed(() => new Date().getFullYear());
 
 const printCertificate = () => {
   window.print();
+};
+
+const downloadCertificate = async () => {
+  const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
 
 const formatDate = (dateStr) => {

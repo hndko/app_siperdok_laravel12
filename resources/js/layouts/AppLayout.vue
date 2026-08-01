@@ -51,9 +51,9 @@
               <span class="badge badge-light mt-2">{{ (userRole || 'USER').toUpperCase() }}</span>
             </li>
             <li class="user-footer p-2 bg-light">
-              <Link href="/logout" method="post" as="button" class="btn btn-danger btn-flat btn-block font-weight-bold">
+              <button type="button" class="btn btn-danger btn-flat btn-block font-weight-bold" @click="logout">
                 <i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)
-              </Link>
+              </button>
             </li>
           </ul>
         </li>
@@ -138,16 +138,16 @@
 
             <li class="nav-header">LAPORAN & EXPORT</li>
             <li class="nav-item">
-              <a href="/export/projects/csv" class="nav-link">
+              <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('csv')">
                 <i class="nav-icon fas fa-file-csv text-success"></i>
                 <p>Export CSV</p>
-              </a>
+              </button>
             </li>
             <li class="nav-item" v-if="isPenilai || isAdmin">
-              <a href="/export/projects/xlsx" class="nav-link">
+              <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('xlsx')">
                 <i class="nav-icon fas fa-file-excel text-success"></i>
                 <p>Export Excel (.xlsx)</p>
-              </a>
+              </button>
             </li>
           </ul>
         </nav>
@@ -202,7 +202,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -210,10 +210,14 @@ const props = defineProps({
 });
 
 const page = usePage();
-const user = computed(() => page.props.auth ? page.props.auth.user : null);
-const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
-const notifications = computed(() => page.props.notifications || []);
-const unreadNotificationsCount = computed(() => page.props.unreadNotificationsCount || 0);
+const apiUser = ref(null);
+const apiRole = ref(null);
+const apiNotifications = ref([]);
+const apiUnreadNotificationsCount = ref(0);
+const user = computed(() => apiUser.value || (page.props.auth ? page.props.auth.user : null));
+const userRole = computed(() => apiRole.value || (page.props.auth ? page.props.auth.role : 'pemohon'));
+const notifications = computed(() => apiNotifications.value.length ? apiNotifications.value : (page.props.notifications || []));
+const unreadNotificationsCount = computed(() => apiUnreadNotificationsCount.value || page.props.unreadNotificationsCount || 0);
 const flash = computed(() => page.props.flash || {});
 
 const isPemohon = computed(() => userRole.value === 'pemohon');
@@ -234,7 +238,47 @@ const initAdminLTEWidgets = () => {
   }
 };
 
+const loadCurrentUser = async () => {
+  if (!localStorage.getItem('siperdok_token')) {
+    return;
+  }
+
+  try {
+    const response = await window.axios.get('/api/v1/me');
+    apiUser.value = response.data.data.user;
+    apiRole.value = response.data.data.role;
+    apiNotifications.value = response.data.data.notifications || [];
+    apiUnreadNotificationsCount.value = response.data.data.unread_notifications_count || 0;
+  } catch {
+    localStorage.removeItem('siperdok_token');
+    window.location.href = '/login';
+  }
+};
+
+const logout = async () => {
+  try {
+    await window.axios.post('/api/v1/logout');
+  } finally {
+    localStorage.removeItem('siperdok_token');
+    delete window.axios.defaults.headers.common.Authorization;
+    window.location.href = '/login';
+  }
+};
+
+const downloadExport = async (type) => {
+  const response = await window.axios.get(`/api/v1/exports/projects/${type}`, {
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `siperdok-projects.${type}`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
 onMounted(() => {
+  loadCurrentUser();
   initAdminLTEWidgets();
   router.on('navigate', () => {
     setTimeout(initAdminLTEWidgets, 100);

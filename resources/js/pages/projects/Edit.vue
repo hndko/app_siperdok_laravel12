@@ -91,13 +91,29 @@ const handleFile = (e) => {
   form.document = e.target.files[0];
 };
 
+const submitProject = async (action) => {
+  const payload = new FormData();
+  form.submit_action = action;
+  payload.append('title', form.title);
+  payload.append('document_type_id', form.document_type_id);
+  payload.append('description', form.description || '');
+  payload.append('submit_action', form.submit_action);
+
+  if (form.document) {
+    payload.append('document', form.document);
+  }
+
+  await window.axios.post(`/api/v1/projects/${props.project.id}`, payload);
+  window.location.href = `/projects/${props.project.id}`;
+};
+
 const saveDraft = () => {
   form.submit_action = 'draft';
-  form.post(`/projects/${props.project.id}`);
+  submitProject('draft');
 };
 
 const submit = () => {
   form.submit_action = 'submit';
-  form.post(`/projects/${props.project.id}`);
+  submitProject('submit');
 };
 </script>

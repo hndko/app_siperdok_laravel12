@@ -43,9 +43,9 @@
           <i class="fas fa-info-circle" aria-hidden="true"></i>
           <span>{{ flash.info }}</span>
         </div>
-        <div v-if="flash.error || errors.email" class="auth-alert auth-alert-danger">
+        <div v-if="flash.error || errors.email || apiError" class="auth-alert auth-alert-danger">
           <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-          <span>{{ flash.error || errors.email }}</span>
+          <span>{{ apiError || flash.error || errors.email }}</span>
         </div>
 
         <form class="login-form" @submit.prevent="submit">
@@ -85,9 +85,9 @@
             </label>
           </div>
 
-          <button type="submit" :disabled="form.processing" class="submit-button">
-            <i :class="form.processing ? 'fas fa-circle-notch fa-spin' : 'fas fa-arrow-right'" aria-hidden="true"></i>
-            <span>{{ form.processing ? 'Memproses...' : 'Masuk' }}</span>
+          <button type="submit" :disabled="processing" class="submit-button">
+            <i :class="processing ? 'fas fa-circle-notch fa-spin' : 'fas fa-arrow-right'" aria-hidden="true"></i>
+            <span>{{ processing ? 'Memproses...' : 'Masuk' }}</span>
           </button>
         </form>
 
@@ -151,15 +151,17 @@
 </template>
 
 <script setup>
-import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 
 const page = usePage();
 const flash = computed(() => page.props.flash || {});
 const errors = computed(() => page.props.errors || {});
 const showDemoAccounts = ref(false);
+const processing = ref(false);
+const apiError = ref('');
 
-const form = useForm({
+const form = reactive({
   email: '',
   password: '',
   remember: false,
@@ -171,8 +173,26 @@ const fillLogin = (email, pass) => {
   showDemoAccounts.value = false;
 };
 
-const submit = () => {
-  form.post('/login');
+const submit = async () => {
+  processing.value = true;
+  apiError.value = '';
+
+  try {
+    const response = await window.axios.post('/api/v1/login', {
+      email: form.email,
+      password: form.password,
+    });
+
+    localStorage.setItem('siperdok_token', response.data.access_token);
+    window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
+    window.location.href = '/dashboard';
+  } catch (error) {
+    apiError.value = error.response?.data?.message
+      || error.response?.data?.errors?.email?.[0]
+      || 'Login gagal. Periksa kembali email dan password.';
+  } finally {
+    processing.value = false;
+  }
 };
 </script>
 

@@ -23,7 +23,7 @@ class AuthTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen()
+    public function test_users_can_authenticate_using_the_login_api()
     {
         $user = User::factory()->create([
             'email' => 'pemohon_test@example.com',
@@ -31,13 +31,13 @@ class AuthTest extends TestCase
         ]);
         $user->assignRole('pemohon');
 
-        $response = $this->post('/login', [
+        $response = $this->postJson('/api/v1/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect('/dashboard');
+        $response->assertOk()
+            ->assertJsonStructure(['status', 'access_token', 'token_type', 'user']);
     }
 
     public function test_user_can_login_via_sanctum_api()

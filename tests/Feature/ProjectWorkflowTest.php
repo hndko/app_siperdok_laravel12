@@ -44,26 +44,27 @@ class ProjectWorkflowTest extends TestCase
         // 1. Pemohon creates a new Project submission
         $file = UploadedFile::fake()->create('berkas_amdal.pdf', 1024, 'application/pdf');
 
-        $response = $this->actingAs($pemohon)->post('/projects', [
+        $response = $this->actingAs($pemohon, 'sanctum')->withHeaders(['Accept' => 'application/json'])->post('/api/v1/projects', [
             'title' => 'Permohonan AMDAL Test Workflow',
             'document_type_id' => $docType->id,
             'description' => 'Uji coba alur permohonan dokumen.',
             'document' => $file,
             'submit_action' => 'submit',
         ]);
+        $response->assertCreated();
 
         $project = Project::where('title', 'Permohonan AMDAL Test Workflow')->first();
         $this->assertNotNull($project);
         $this->assertEquals(Project::STATUS_SUBMITTED, $project->status);
 
         // 2. Penilai starts review and requests revision
-        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/start-review");
-        $response->assertRedirect("/assessments/{$project->id}/review");
+        $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}/start-review");
+        $response->assertOk();
 
         $project->refresh();
         $this->assertEquals(Project::STATUS_IN_REVIEW, $project->status);
 
-        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/process", [
+        $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}", [
             'decision' => 'revision',
             'notes' => 'Tolong lengkapi peta lokasi kegiatan.',
         ]);
@@ -73,21 +74,22 @@ class ProjectWorkflowTest extends TestCase
 
         // 3. Pemohon updates & resubmits
         $newFile = UploadedFile::fake()->create('berkas_amdal_rev1.pdf', 1200, 'application/pdf');
-        $response = $this->actingAs($pemohon)->put("/projects/{$project->id}", [
+        $response = $this->actingAs($pemohon, 'sanctum')->withHeaders(['Accept' => 'application/json'])->post("/api/v1/projects/{$project->id}", [
             'title' => 'Permohonan AMDAL Test Workflow (Revisi 1)',
             'document_type_id' => $docType->id,
             'description' => 'Peta lokasi sudah ditambahkan.',
             'document' => $newFile,
             'submit_action' => 'submit',
         ]);
+        $response->assertOk();
 
         $project->refresh();
         $this->assertEquals(Project::STATUS_SUBMITTED, $project->status);
 
         // 4. Penilai starts review again and approves the project
-        $this->actingAs($penilai)->post("/assessments/{$project->id}/start-review");
+        $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}/start-review");
 
-        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/process", [
+        $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}", [
             'decision' => 'approved',
             'notes' => 'Dokumen lengkap dan memenuhi syarat.',
         ]);

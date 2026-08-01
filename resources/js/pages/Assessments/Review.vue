@@ -184,12 +184,19 @@ const form = useForm({
   notes: '',
 });
 
-const startReview = () => {
-  startReviewForm.post(`/assessments/${props.project.id}/start-review`);
+const startReview = async () => {
+  await window.axios.post(`/api/v1/assessments/${props.project.id}/start-review`, {
+    notes: startReviewForm.notes,
+  });
+  window.location.reload();
 };
 
-const submitDecision = () => {
-  form.post(`/assessments/${props.project.id}/process`);
+const submitDecision = async () => {
+  await window.axios.post(`/api/v1/assessments/${props.project.id}`, {
+    decision: form.decision,
+    notes: form.notes,
+  });
+  window.location.reload();
 };
 
 const formatDate = (dateStr) => {

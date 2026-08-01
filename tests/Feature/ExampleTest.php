@@ -19,8 +19,8 @@ class ExampleTest extends TestCase
 
     public function test_the_application_redirects_unauthenticated_users(): void
     {
-        $response = $this->get('/dashboard');
-        $response->assertRedirect('/login');
+        $response = $this->getJson('/api/v1/dashboard');
+        $response->assertUnauthorized();
     }
 
     public function test_authenticated_user_can_access_dashboard(): void
@@ -28,7 +28,7 @@ class ExampleTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('pemohon');
 
-        $response = $this->actingAs($user)->get('/dashboard');
-        $response->assertStatus(200);
+        $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/dashboard');
+        $response->assertOk();
     }
 }

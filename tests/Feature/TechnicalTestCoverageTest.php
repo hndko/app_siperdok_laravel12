@@ -79,9 +79,9 @@ class TechnicalTestCoverageTest extends TestCase
         $penilai = $this->userWithRole('penilai');
         $project = $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
 
-        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/start-review");
+        $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}/start-review");
 
-        $response->assertRedirect("/assessments/{$project->id}/review");
+        $response->assertOk();
         $project->refresh();
 
         $this->assertSame(Project::STATUS_IN_REVIEW, $project->status);
@@ -100,7 +100,7 @@ class TechnicalTestCoverageTest extends TestCase
         $pemohon = $this->userWithRole('pemohon');
         $project = $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
 
-        $response = $this->actingAs($pemohon)->post("/assessments/{$project->id}/start-review");
+        $response = $this->actingAs($pemohon, 'sanctum')->postJson("/api/v1/assessments/{$project->id}/start-review");
 
         $response->assertForbidden();
         $this->assertSame(Project::STATUS_SUBMITTED, $project->fresh()->status);
@@ -112,12 +112,12 @@ class TechnicalTestCoverageTest extends TestCase
         $penilai = $this->userWithRole('penilai');
         $project = $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
 
-        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/process", [
+        $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}", [
             'decision' => 'approved',
             'notes' => 'Langsung approve tanpa review.',
         ]);
 
-        $response->assertSessionHasErrors('status');
+        $response->assertUnprocessable();
         $this->assertSame(Project::STATUS_SUBMITTED, $project->fresh()->status);
     }
 
@@ -127,8 +127,8 @@ class TechnicalTestCoverageTest extends TestCase
         $draft = $this->projectFor($pemohon, Project::STATUS_DRAFT);
         $submitted = $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
 
-        $this->actingAs($pemohon)->delete("/projects/{$submitted->id}")->assertForbidden();
-        $this->actingAs($pemohon)->delete("/projects/{$draft->id}")->assertRedirect('/projects');
+        $this->actingAs($pemohon, 'sanctum')->deleteJson("/api/v1/projects/{$submitted->id}")->assertForbidden();
+        $this->actingAs($pemohon, 'sanctum')->deleteJson("/api/v1/projects/{$draft->id}")->assertOk();
 
         $this->assertDatabaseMissing('projects', ['id' => $draft->id]);
         $this->assertDatabaseHas('projects', ['id' => $submitted->id]);
@@ -140,7 +140,7 @@ class TechnicalTestCoverageTest extends TestCase
         $penilai = $this->userWithRole('penilai');
         $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
 
-        $response = $this->actingAs($penilai)->get('/export/projects/xlsx?status=submitted');
+        $response = $this->actingAs($penilai, 'sanctum')->get('/api/v1/exports/projects/xlsx?status=submitted');
 
         $response->assertOk();
         $this->assertStringContainsString('spreadsheetml', $response->headers->get('content-type'));
@@ -148,10 +148,23 @@ class TechnicalTestCoverageTest extends TestCase
 
     public function test_all_application_controller_routes_point_to_existing_methods(): void
     {
+        $checkedRoutes = 0;
+
         foreach (Route::getRoutes() as $route) {
             $action = $route->getActionName();
 
-            if (!str_contains($action, 'App\\Http\\Controllers\\') || !str_contains($action, '@')) {
+            if (!str_contains($action, 'App\\Http\\Controllers\\')) {
+                continue;
+            }
+
+            $checkedRoutes++;
+
+            if (!str_contains($action, '@')) {
+                $this->assertTrue(
+                    class_exists($action) && method_exists($action, '__invoke'),
+                    "{$route->uri()} points to missing invokable {$action}"
+                );
+
                 continue;
             }
 
@@ -162,6 +175,8 @@ class TechnicalTestCoverageTest extends TestCase
                 "{$route->uri()} points to missing {$controller}@{$method}"
             );
         }
+
+        $this->assertGreaterThan(0, $checkedRoutes);
     }
 
     private function userWithRole(string $role): User

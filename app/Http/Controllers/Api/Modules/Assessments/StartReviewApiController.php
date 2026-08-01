@@ -9,6 +9,7 @@ use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class StartReviewApiController extends Controller
 {
@@ -30,6 +31,8 @@ class StartReviewApiController extends Controller
                 message: 'Review permohonan berhasil dimulai.',
             );
         } catch (ValidationException $e) {
+            throw $e;
+        } catch (HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error('Failed to start project review via API.', ['project_id' => $id, 'error' => $e->getMessage()]);

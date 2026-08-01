@@ -10,6 +10,7 @@ use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class StoreAssessmentApiController extends Controller
 {
@@ -35,6 +36,8 @@ class StoreAssessmentApiController extends Controller
                 message: 'Penilaian permohonan berhasil diperbarui.',
             );
         } catch (ValidationException $e) {
+            throw $e;
+        } catch (HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error('Failed to assess API project.', ['project_id' => $id, 'error' => $e->getMessage()]);

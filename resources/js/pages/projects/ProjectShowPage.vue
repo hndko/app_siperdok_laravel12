@@ -57,7 +57,7 @@
               <i class="fas fa-award text-success fa-3x mb-2"></i>
               <h5 class="font-weight-bold text-success">DOKUMEN TELAH DISETUJUI & DITERBITKAN</h5>
               <p class="small text-muted mb-3">Dokumen kelayakan ini telah memenuhi seluruh kriteria dan disahkan oleh Penilai.</p>
-              <a :href="`/export/projects/${project.id}/certificate`" class="btn btn-success font-weight-bold">
+                <a :href="`/api/v1/exports/projects/${project.id}/certificate`" class="btn btn-success font-weight-bold">
                 <i class="fas fa-file-pdf mr-1"></i> Unduh Surat Pengesahan Dokumen (PDF)
               </a>
             </div>

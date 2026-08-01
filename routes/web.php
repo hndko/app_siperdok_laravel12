@@ -1,62 +1,87 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\Master\DocumentTypeController;
-use App\Http\Controllers\Master\UserController;
-use App\Http\Controllers\Pemohon\ProjectController;
-use App\Http\Controllers\Penilai\AssessmentController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
-// Guest Routes
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
-});
+Route::get('/', fn () => redirect('/dashboard'));
 
-// Redirect root to dashboard/login
-Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+Route::get('/{path}', function (string $path = '') {
+    return Inertia::render(resolveSpaPage($path), resolveSpaProps($path));
+})->where('path', '^(?!api/|storage/|up$).*$');
 
-// Authenticated Routes
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+if (!function_exists('resolveSpaPage')) {
+    function resolveSpaPage(string $path): string
+    {
+        $path = trim($path, '/');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        return match (true) {
+            $path === 'login' => 'Auth/Login',
+            $path === 'register' => 'Auth/Register',
+            $path === 'dashboard' => 'Dashboard',
+            $path === 'projects' => 'Projects/Index',
+            $path === 'projects/create' => 'Projects/Create',
+            preg_match('#^projects/\d+/edit$#', $path) === 1 => 'Projects/Edit',
+            preg_match('#^projects/\d+$#', $path) === 1 => 'Projects/Show',
+            $path === 'assessments' => 'Assessments/Index',
+            $path === 'assessments/history' => 'Assessments/History',
+            preg_match('#^assessments/\d+/review$#', $path) === 1 => 'Assessments/Review',
+            $path === 'master/users' => 'Master/Users',
+            $path === 'master/document-types' => 'Master/DocumentTypes',
+            preg_match('#^exports/projects/\d+/certificate/preview$#', $path) === 1 => 'Exports/CertificatePreview',
+            default => 'Dashboard',
+        };
+    }
+}
 
-    // Pemohon & Common Project Routes
-    Route::resource('projects', ProjectController::class)->only([
-        'index',
-        'create',
-        'store',
-        'show',
-        'edit',
-        'update',
-        'destroy',
-    ]);
+if (!function_exists('resolveSpaProps')) {
+    function resolveSpaProps(string $path): array
+    {
+        $path = trim($path, '/');
+        $emptyPaginator = ['data' => [], 'next_cursor' => null, 'prev_cursor' => null, 'path' => url()->current()];
+        $emptyProject = [
+            'id' => null,
+            'project_number' => '-',
+            'title' => '-',
+            'status' => 'draft',
+            'description' => null,
+            'document_type' => null,
+            'applicant' => null,
+            'evaluator' => null,
+            'documents' => [],
+            'assessment_logs' => [],
+        ];
 
-    // Penilai & Evaluator Assessment Routes
-    Route::middleware('role:penilai|admin')->group(function () {
-        Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
-        Route::get('/assessments/{id}/review', [AssessmentController::class, 'review'])->name('assessments.review');
-        Route::post('/assessments/{id}/start-review', [AssessmentController::class, 'startReview'])->name('assessments.start-review');
-        Route::post('/assessments/{id}/process', [AssessmentController::class, 'processDecision'])->name('assessments.process');
-        Route::get('/assessments/history', [AssessmentController::class, 'history'])->name('assessments.history');
-    });
-
-    // Admin Master Data Routes
-    Route::middleware('role:admin')->prefix('master')->name('master.')->group(function () {
-        Route::resource('users', UserController::class)->only(['index']);
-        Route::resource('document-types', DocumentTypeController::class)->only(['index']);
-    });
-
-    // Export Routes
-    Route::get('/export/projects/csv', [ExportController::class, 'exportProjectsCsv'])->name('export.projects.csv');
-    Route::get('/export/projects/xlsx', [ExportController::class, 'exportProjectsXlsx'])->name('export.projects.xlsx');
-    Route::get('/export/projects/{id}/certificate/preview', [ExportController::class, 'previewCertificate'])->name('export.certificate.preview');
-    Route::get('/export/projects/{id}/certificate', [ExportController::class, 'exportCertificatePdf'])->name('export.certificate.pdf');
-});
+        return match (true) {
+            $path === 'dashboard' => [
+                'totalProjects' => 0,
+                'approvedCount' => 0,
+                'revisionCount' => 0,
+                'rejectedCount' => 0,
+                'pendingCount' => 0,
+                'draftCount' => 0,
+                'recentProjects' => [],
+                'chartLabels' => [],
+                'chartValues' => [],
+                'statusCounts' => [],
+            ],
+            $path === 'projects' || $path === 'assessments' => [
+                'projects' => $emptyPaginator,
+                'documentTypes' => [],
+                'filters' => request()->only(['search', 'status', 'document_type_id']),
+            ],
+            $path === 'projects/create' => ['documentTypes' => []],
+            preg_match('#^projects/\d+/edit$#', $path) === 1 => ['project' => $emptyProject, 'documentTypes' => []],
+            preg_match('#^projects/\d+$#', $path) === 1 => ['project' => $emptyProject],
+            $path === 'assessments/history' => ['logs' => $emptyPaginator, 'filters' => request()->only(['search', 'action'])],
+            preg_match('#^assessments/\d+/review$#', $path) === 1 => [
+                'project' => $emptyProject,
+                'canStartReview' => false,
+                'canAssess' => false,
+            ],
+            $path === 'master/users' => ['users' => $emptyPaginator, 'filters' => request()->only(['search', 'role'])],
+            $path === 'master/document-types' => ['documentTypes' => []],
+            preg_match('#^exports/projects/\d+/certificate/preview$#', $path) === 1 => ['project' => $emptyProject],
+            default => [],
+        };
+    }
+}

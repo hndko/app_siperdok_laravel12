@@ -41,10 +41,10 @@
           <p>Masukkan data resmi agar proses verifikasi dokumen dapat ditelusuri dengan jelas.</p>
         </header>
 
-        <div v-if="Object.keys(errors).length" class="auth-alert auth-alert-danger">
+        <div v-if="Object.keys(displayErrors).length" class="auth-alert auth-alert-danger">
           <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
           <ul>
-            <li v-for="(err, key) in errors" :key="key">{{ err }}</li>
+            <li v-for="(err, key) in displayErrors" :key="key">{{ Array.isArray(err) ? err[0] : err }}</li>
           </ul>
         </div>
 
@@ -146,9 +146,9 @@
             </div>
           </label>
 
-          <button type="submit" :disabled="form.processing" class="submit-button form-field-wide">
-            <i :class="form.processing ? 'fas fa-circle-notch fa-spin' : 'fas fa-user-plus'" aria-hidden="true"></i>
-            <span>{{ form.processing ? 'Memproses...' : 'Daftar Sekarang' }}</span>
+          <button type="submit" :disabled="processing" class="submit-button form-field-wide">
+            <i :class="processing ? 'fas fa-circle-notch fa-spin' : 'fas fa-user-plus'" aria-hidden="true"></i>
+            <span>{{ processing ? 'Memproses...' : 'Daftar Sekarang' }}</span>
           </button>
         </form>
 
@@ -162,13 +162,16 @@
 </template>
 
 <script setup>
-import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 
 const page = usePage();
 const errors = computed(() => page.props.errors || {});
+const apiErrors = ref({});
+const displayErrors = computed(() => Object.keys(apiErrors.value).length ? apiErrors.value : errors.value);
+const processing = ref(false);
 
-const form = useForm({
+const form = reactive({
   name: '',
   email: '',
   phone: '',
@@ -178,8 +181,23 @@ const form = useForm({
   password_confirmation: '',
 });
 
-const submit = () => {
-  form.post('/register');
+const submit = async () => {
+  processing.value = true;
+  apiErrors.value = {};
+
+  try {
+    const response = await window.axios.post('/api/v1/register', form);
+
+    localStorage.setItem('siperdok_token', response.data.access_token);
+    window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
+    window.location.href = '/dashboard';
+  } catch (error) {
+    apiErrors.value = error.response?.data?.errors || {
+      register: error.response?.data?.message || 'Registrasi gagal. Periksa kembali data yang diisi.',
+    };
+  } finally {
+    processing.value = false;
+  }
 };
 </script>
 
