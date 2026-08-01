@@ -29,24 +29,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Pemohon & Common Project Routes
-    Route::resource('projects', ProjectController::class);
+    Route::resource('projects', ProjectController::class)->only([
+        'index',
+        'create',
+        'store',
+        'show',
+        'edit',
+        'update',
+        'destroy',
+    ]);
 
     // Penilai & Evaluator Assessment Routes
     Route::middleware('role:penilai|admin')->group(function () {
         Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments.index');
         Route::get('/assessments/{id}/review', [AssessmentController::class, 'review'])->name('assessments.review');
+        Route::post('/assessments/{id}/start-review', [AssessmentController::class, 'startReview'])->name('assessments.start-review');
         Route::post('/assessments/{id}/process', [AssessmentController::class, 'processDecision'])->name('assessments.process');
         Route::get('/assessments/history', [AssessmentController::class, 'history'])->name('assessments.history');
     });
 
     // Admin Master Data Routes
     Route::middleware('role:admin')->prefix('master')->name('master.')->group(function () {
-        Route::resource('users', UserController::class);
-        Route::resource('document-types', DocumentTypeController::class)->except(['create', 'show', 'destroy']);
+        Route::resource('users', UserController::class)->only(['index']);
+        Route::resource('document-types', DocumentTypeController::class)->only(['index']);
     });
 
     // Export Routes
     Route::get('/export/projects/csv', [ExportController::class, 'exportProjectsCsv'])->name('export.projects.csv');
+    Route::get('/export/projects/xlsx', [ExportController::class, 'exportProjectsXlsx'])->name('export.projects.xlsx');
     Route::get('/export/projects/{id}/certificate/preview', [ExportController::class, 'previewCertificate'])->name('export.certificate.preview');
     Route::get('/export/projects/{id}/certificate', [ExportController::class, 'exportCertificatePdf'])->name('export.certificate.pdf');
 });

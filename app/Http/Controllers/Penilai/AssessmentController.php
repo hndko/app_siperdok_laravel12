@@ -3,25 +3,27 @@
 namespace App\Http\Controllers\Penilai;
 
 use App\Http\Controllers\Controller;
-use App\Models\AssessmentLog;
 use App\Models\DocumentType;
-use App\Models\Notification;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class AssessmentController extends Controller
 {
+    public function __construct(private readonly ProjectWorkflowService $workflow) {}
+
     public function index(Request $request)
     {
         /** @var User $user */
         $user = Auth::user();
 
         $query = Project::with(['applicant', 'documentType', 'evaluator'])
-            ->where('status', '!=', Project::STATUS_DRAFT);
+            ->visibleTo($user);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -58,7 +60,32 @@ class AssessmentController extends Controller
         $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents.uploader', 'assessmentLogs.user'])
             ->findOrFail($id);
 
-        return Inertia::render('Assessments/Review', compact('project'));
+        $this->authorize('view', $project);
+
+        return Inertia::render('Assessments/Review', [
+            'project' => $project,
+            'canStartReview' => Auth::user()->can('startReview', $project),
+            'canAssess' => Auth::user()->can('assess', $project),
+        ]);
+    }
+
+    public function startReview(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $this->workflow->startReview((int) $id, Auth::user(), $validated['notes'] ?? null);
+
+            return redirect()->route('assessments.review', $id)
+                ->with('success', 'Review permohonan berhasil dimulai.');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Failed to start project review.', ['project_id' => $id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memulai review permohonan.');
+        }
     }
 
     public function processDecision(Request $request, $id)
@@ -66,69 +93,21 @@ class AssessmentController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $project = Project::findOrFail($id);
-
         $validated = $request->validate([
             'decision' => ['required', 'in:approved,revision,rejected'],
             'notes' => ['required', 'string', 'min:5'],
         ]);
 
-        DB::beginTransaction();
         try {
-            $prevStatus = $project->status;
-            $newStatus = $validated['decision'];
-            $now = now();
-
-            $updateData = [
-                'status' => $newStatus,
-                'evaluator_id' => $user->id,
-            ];
-
-            if ($newStatus === Project::STATUS_APPROVED) {
-                $updateData['approved_at'] = $now;
-                $action = 'approve';
-                $title = 'Permohonan Dokumen DISETUJUI!';
-                $msgNotification = 'Selamat! Permohonan dokumen ' . $project->project_number . ' telah DISETUJUI oleh Penilai. Dokumen kelayakan kini terbit.';
-                $notifType = 'success';
-            } elseif ($newStatus === Project::STATUS_REVISION) {
-                $action = 'request_revision';
-                $title = 'Permohonan Dokumen Memerlukan REVISI';
-                $msgNotification = 'Permohonan dokumen ' . $project->project_number . ' memerlukan perbaikan. Catatan Penilai: ' . $validated['notes'];
-                $notifType = 'warning';
-            } else {
-                $updateData['rejected_at'] = $now;
-                $action = 'reject';
-                $title = 'Permohonan Dokumen DITOLAK';
-                $msgNotification = 'Mohon maaf, permohonan dokumen ' . $project->project_number . ' DITOLAK. Alasan: ' . $validated['notes'];
-                $notifType = 'danger';
-            }
-
-            $project->update($updateData);
-
-            AssessmentLog::create([
-                'project_id' => $project->id,
-                'user_id' => $user->id,
-                'action' => $action,
-                'previous_status' => $prevStatus,
-                'new_status' => $newStatus,
-                'notes' => $validated['notes'],
-            ]);
-
-            Notification::create([
-                'user_id' => $project->applicant_id,
-                'project_id' => $project->id,
-                'title' => $title,
-                'message' => $msgNotification,
-                'type' => $notifType,
-            ]);
-
-            DB::commit();
+            $project = $this->workflow->decide((int) $id, $user, $validated['decision'], $validated['notes']);
 
             return redirect()->route('assessments.review', $project->id)
                 ->with('success', 'Keputusan penilaian berhasil diperbarui.');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', $e->getMessage());
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal memproses keputusan: ' . $e->getMessage());
+            Log::error('Failed to process project decision.', ['project_id' => $id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memproses keputusan.');
         }
     }
 

@@ -56,7 +56,13 @@ class ProjectWorkflowTest extends TestCase
         $this->assertNotNull($project);
         $this->assertEquals(Project::STATUS_SUBMITTED, $project->status);
 
-        // 2. Penilai reviews and requests revision
+        // 2. Penilai starts review and requests revision
+        $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/start-review");
+        $response->assertRedirect("/assessments/{$project->id}/review");
+
+        $project->refresh();
+        $this->assertEquals(Project::STATUS_IN_REVIEW, $project->status);
+
         $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/process", [
             'decision' => 'revision',
             'notes' => 'Tolong lengkapi peta lokasi kegiatan.',
@@ -78,7 +84,9 @@ class ProjectWorkflowTest extends TestCase
         $project->refresh();
         $this->assertEquals(Project::STATUS_SUBMITTED, $project->status);
 
-        // 4. Penilai approves the project
+        // 4. Penilai starts review again and approves the project
+        $this->actingAs($penilai)->post("/assessments/{$project->id}/start-review");
+
         $response = $this->actingAs($penilai)->post("/assessments/{$project->id}/process", [
             'decision' => 'approved',
             'notes' => 'Dokumen lengkap dan memenuhi syarat.',

@@ -58,6 +58,25 @@
       <!-- Right Column: Decision Action Form & Audit Trail -->
       <div class="col-md-5">
         <!-- Vue 3 Interactive Decision Form -->
+        <div v-if="canStartReview" class="card card-outline card-info shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h3 class="card-title font-weight-bold text-info">
+              <i class="fas fa-search mr-2"></i> Verifikasi Administrasi
+            </h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">Mulai review untuk mengunci permohonan ini ke penilai yang sedang memproses.</p>
+            <button
+              type="button"
+              :disabled="startReviewForm.processing"
+              class="btn btn-info btn-block font-weight-bold"
+              @click="startReview"
+            >
+              <i class="fas fa-play mr-1"></i> {{ startReviewForm.processing ? 'Memulai...' : 'Mulai Review' }}
+            </button>
+          </div>
+        </div>
+
         <div class="card card-outline card-success shadow-sm mb-4">
           <div class="card-header bg-light">
             <h3 class="card-title font-weight-bold text-success">
@@ -108,11 +127,14 @@
 
               <button 
                 type="submit" 
-                :disabled="form.processing || !form.notes.trim()"
+                :disabled="form.processing || !canAssess || !form.notes.trim()"
                 class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm"
               >
                 <i class="fas fa-paper-plane mr-2"></i> {{ form.processing ? 'Memproses...' : 'Simpan Keputusan Penilaian' }}
               </button>
+              <p v-if="!canAssess" class="text-muted small text-center mt-2 mb-0">
+                Keputusan hanya dapat diberikan setelah review dimulai oleh penilai yang menangani.
+              </p>
             </form>
           </div>
         </div>
@@ -148,7 +170,13 @@ import AppLayout from '../../layouts/AppLayout.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
 
 const props = defineProps({
-  project: { type: Object, required: true }
+  project: { type: Object, required: true },
+  canStartReview: { type: Boolean, default: false },
+  canAssess: { type: Boolean, default: false }
+});
+
+const startReviewForm = useForm({
+  notes: '',
 });
 
 const form = useForm({
@@ -156,8 +184,12 @@ const form = useForm({
   notes: '',
 });
 
+const startReview = () => {
+  startReviewForm.post(`/assessments/${props.project.id}/start-review`);
+};
+
 const submitDecision = () => {
-  form.post(`/assessments/${props.project.id}`);
+  form.post(`/assessments/${props.project.id}/process`);
 };
 
 const formatDate = (dateStr) => {

@@ -16,6 +16,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/projects', [ProjectApiController::class, 'store']);
         Route::get('/projects/{id}', [ProjectApiController::class, 'show']);
 
+        Route::post('/assessments/{id}/start-review', [ProjectApiController::class, 'startReview']);
         Route::post('/assessments/{id}', [ProjectApiController::class, 'assess']);
         Route::get('/assessments/history', [ProjectApiController::class, 'history']);
 

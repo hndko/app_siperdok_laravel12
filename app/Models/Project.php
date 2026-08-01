@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
@@ -34,6 +35,57 @@ class Project extends Model
     public const STATUS_REVISION = 'revision';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
+
+    public const REVIEWABLE_STATUSES = [
+        self::STATUS_SUBMITTED,
+        self::STATUS_IN_REVIEW,
+        self::STATUS_REVISION,
+        self::STATUS_APPROVED,
+        self::STATUS_REJECTED,
+    ];
+
+    public const TERMINAL_STATUSES = [
+        self::STATUS_APPROVED,
+        self::STATUS_REJECTED,
+    ];
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        if ($user->hasRole('pemohon')) {
+            return $query->where('applicant_id', $user->id);
+        }
+
+        if ($user->hasRole('penilai')) {
+            return $query->whereIn('status', self::REVIEWABLE_STATUSES);
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['search'] ?? null, function (Builder $q, string $search) {
+                $q->where(function (Builder $inner) use ($search) {
+                    $inner->where('title', 'like', "%{$search}%")
+                        ->orWhere('project_number', 'like', "%{$search}%")
+                        ->orWhereHas('applicant', function (Builder $applicant) use ($search) {
+                            $applicant->where('name', 'like', "%{$search}%")
+                                ->orWhere('company_name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($filters['status'] ?? null, fn (Builder $q, string $status) => $q->where('status', $status))
+            ->when($filters['document_type_id'] ?? null, fn (Builder $q, mixed $id) => $q->where('document_type_id', $id))
+            ->when($filters['applicant_id'] ?? null, fn (Builder $q, mixed $id) => $q->where('applicant_id', $id))
+            ->when($filters['evaluator_id'] ?? null, fn (Builder $q, mixed $id) => $q->where('evaluator_id', $id))
+            ->when($filters['date_from'] ?? null, fn (Builder $q, string $date) => $q->whereDate('created_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn (Builder $q, string $date) => $q->whereDate('created_at', '<=', $date));
+    }
 
     public function applicant()
     {

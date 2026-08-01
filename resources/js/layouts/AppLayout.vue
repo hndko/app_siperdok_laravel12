@@ -139,8 +139,14 @@
             <li class="nav-header">LAPORAN & EXPORT</li>
             <li class="nav-item">
               <a href="/export/projects/csv" class="nav-link">
+                <i class="nav-icon fas fa-file-csv text-success"></i>
+                <p>Export CSV</p>
+              </a>
+            </li>
+            <li class="nav-item" v-if="isPenilai || isAdmin">
+              <a href="/export/projects/xlsx" class="nav-link">
                 <i class="nav-icon fas fa-file-excel text-success"></i>
-                <p>Export Excel (CSV)</p>
+                <p>Export Excel (.xlsx)</p>
               </a>
             </li>
           </ul>

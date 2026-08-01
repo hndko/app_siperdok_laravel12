@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -12,8 +10,24 @@ services:
     environment:
       SERVICE_NAME: app
       SERVICE_TAGS: dev
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-db_siperdok_laravel12}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
     volumes:
       - .:/var/www
+    depends_on:
+      - postgres
+      - redis
     networks:
       - siperdok-network
 
@@ -26,6 +40,64 @@ services:
     volumes:
       - .:/var/www
       - ./docker-compose/nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - app
+    networks:
+      - siperdok-network
+
+  queue:
+    image: siperdok-app
+    container_name: siperdok_queue
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan queue:work database --tries=3 --timeout=60 --sleep=3
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-db_siperdok_laravel12}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+    volumes:
+      - .:/var/www
+    depends_on:
+      - app
+      - postgres
+      - redis
+    networks:
+      - siperdok-network
+
+  scheduler:
+    image: siperdok-app
+    container_name: siperdok_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-db_siperdok_laravel12}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+    volumes:
+      - .:/var/www
+    depends_on:
+      - app
+      - postgres
+      - redis
     networks:
       - siperdok-network
 

@@ -2,43 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProjectsExport;
 use App\Models\Project;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use Inertia\Inertia;
 
 class ExportController extends Controller
 {
     public function exportProjectsCsv(Request $request)
     {
-        $query = Project::with(['applicant', 'evaluator', 'documentType']);
+        /** @var User $user */
+        $user = Auth::user();
+        $this->authorize('export', Project::class);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $filters = $request->validate($this->filterRules());
 
-        $projects = $query->orderBy('created_at', 'desc')->limit(1000)->get();
+        $query = Project::query()
+            ->with(['applicant:id,name,company_name', 'evaluator:id,name', 'documentType:id,code,name'])
+            ->visibleTo($user)
+            ->filter($filters)
+            ->orderByDesc('created_at');
 
         $csvHeader = ['ID', 'Nomor Permohonan', 'Judul Project', 'Jenis Dokumen', 'Pemohon / Perusahaan', 'Penilai', 'Status', 'Tanggal Pengajuan', 'Tanggal Keputusan'];
         
-        $callback = function () use ($projects, $csvHeader) {
+        $callback = function () use ($query, $csvHeader) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $csvHeader);
 
-            foreach ($projects as $prj) {
-                fputcsv($file, [
-                    $prj->id,
-                    $prj->project_number,
-                    $prj->title,
-                    $prj->documentType->name ?? '-',
-                    ($prj->applicant->name ?? '-') . ' (' . ($prj->applicant->company_name ?? '-') . ')',
-                    $prj->evaluator->name ?? 'Belum Ditugaskan',
-                    strtoupper($prj->status),
-                    $prj->submitted_at ? $prj->submitted_at->format('Y-m-d H:i') : '-',
-                    $prj->approved_at ? $prj->approved_at->format('Y-m-d H:i') : ($prj->rejected_at ? $prj->rejected_at->format('Y-m-d H:i') : '-'),
-                ]);
-            }
+            $query->chunkById(500, function ($projects) use ($file) {
+                foreach ($projects as $prj) {
+                    fputcsv($file, [
+                        $prj->id,
+                        $prj->project_number,
+                        $prj->title,
+                        $prj->documentType->name ?? '-',
+                        ($prj->applicant->name ?? '-') . ' (' . ($prj->applicant->company_name ?? '-') . ')',
+                        $prj->evaluator->name ?? 'Belum Ditugaskan',
+                        strtoupper($prj->status),
+                        $prj->submitted_at ? $prj->submitted_at->format('Y-m-d H:i') : '-',
+                        $prj->approved_at ? $prj->approved_at->format('Y-m-d H:i') : ($prj->rejected_at ? $prj->rejected_at->format('Y-m-d H:i') : '-'),
+                    ]);
+                }
+            });
+
             fclose($file);
         };
 
@@ -48,9 +59,23 @@ class ExportController extends Controller
         ]);
     }
 
+    public function exportProjectsXlsx(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $this->authorize('export', Project::class);
+
+        $filters = $request->validate($this->filterRules());
+        $filename = 'Laporan_Permohonan_Dokumen_' . date('Ymd_His') . '.xlsx';
+
+        return Excel::download(new ProjectsExport($user, $filters), $filename);
+    }
+
     public function previewCertificate($id)
     {
         $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents'])->findOrFail($id);
+
+        $this->authorize('view', $project);
 
         if ($project->status !== Project::STATUS_APPROVED) {
             return back()->with('error', 'Surat pengesahan hanya tersedia untuk permohonan yang telah DISETUJU.');
@@ -62,6 +87,8 @@ class ExportController extends Controller
     public function exportCertificatePdf($id)
     {
         $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents.uploader'])->findOrFail($id);
+
+        $this->authorize('view', $project);
 
         if ($project->status !== Project::STATUS_APPROVED) {
             return back()->with('error', 'Dokumen pengesahan hanya dapat diterbitkan untuk permohonan yang telah DISETUJU.');
@@ -167,5 +194,18 @@ class ExportController extends Controller
 
         $pdf = Pdf::loadHTML($html);
         return $pdf->download('Surat_Pengesahan_Kelayakan_' . $project->project_number . '.pdf');
+    }
+
+    private function filterRules(): array
+    {
+        return [
+            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,revision,approved,rejected'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'document_type_id' => ['nullable', 'integer', 'exists:document_types,id'],
+            'applicant_id' => ['nullable', 'integer', 'exists:users,id'],
+            'evaluator_id' => ['nullable', 'integer', 'exists:users,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ];
     }
 }

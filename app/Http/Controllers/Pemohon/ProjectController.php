@@ -3,18 +3,21 @@
 namespace App\Http\Controllers\Pemohon;
 
 use App\Http\Controllers\Controller;
-use App\Models\AssessmentLog;
 use App\Models\DocumentType;
 use App\Models\Project;
 use App\Models\ProjectDocument;
 use App\Models\User;
+use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
+    public function __construct(private readonly ProjectWorkflowService $workflow) {}
+
     public function index(Request $request)
     {
         /** @var User $user */
@@ -68,24 +71,23 @@ class ProjectController extends Controller
             'submit_action' => ['required', 'in:draft,submit'],
         ]);
 
-        DB::beginTransaction();
         try {
-            $projectNum = 'PRJ-' . date('Ym') . '-' . str_pad(Project::max('id') + 1, 5, '0', STR_PAD_LEFT);
-            $status = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : Project::STATUS_DRAFT;
+            $project = DB::transaction(function () use ($validated, $request, $user) {
+                $projectNum = 'PRJ-' . date('Ym') . '-' . str_pad((Project::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+                $status = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : Project::STATUS_DRAFT;
 
-            $project = Project::create([
-                'project_number' => $projectNum,
-                'title' => $validated['title'],
-                'applicant_id' => $user->id,
-                'document_type_id' => $validated['document_type_id'],
-                'status' => $status,
-                'description' => $validated['description'] ?? null,
-                'submitted_at' => ($status === Project::STATUS_SUBMITTED) ? now() : null,
-            ]);
+                $project = Project::create([
+                    'project_number' => $projectNum,
+                    'title' => $validated['title'],
+                    'applicant_id' => $user->id,
+                    'document_type_id' => $validated['document_type_id'],
+                    'status' => $status,
+                    'description' => $validated['description'] ?? null,
+                    'submitted_at' => ($status === Project::STATUS_SUBMITTED) ? now() : null,
+                ]);
 
-            if ($request->hasFile('document')) {
                 $file = $request->file('document');
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
                 $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
 
                 ProjectDocument::create([
@@ -98,28 +100,27 @@ class ProjectController extends Controller
                     'version' => 1,
                     'uploaded_by' => $user->id,
                 ]);
-            }
 
-            AssessmentLog::create([
-                'project_id' => $project->id,
-                'user_id' => $user->id,
-                'action' => ($status === Project::STATUS_SUBMITTED) ? 'submit' : 'create_draft',
-                'previous_status' => null,
-                'new_status' => $status,
-                'notes' => ($status === Project::STATUS_SUBMITTED) 
-                    ? 'Pengajuan dokumen kelayakan dibuat dan dikirimkan untuk proses penilaian.' 
-                    : 'Draft pengajuan dokumen kelayakan disimpan.',
-            ]);
+                $this->workflow->logSubmission(
+                    project: $project,
+                    actor: $user,
+                    action: ($status === Project::STATUS_SUBMITTED) ? 'submit' : 'create_draft',
+                    previousStatus: null,
+                    notes: ($status === Project::STATUS_SUBMITTED)
+                        ? 'Pengajuan dokumen kelayakan dibuat dan dikirimkan untuk proses penilaian.'
+                        : 'Draft pengajuan dokumen kelayakan disimpan.',
+                );
 
-            DB::commit();
+                return $project;
+            });
 
-            $msg = ($status === Project::STATUS_SUBMITTED)
+            $msg = ($project->status === Project::STATUS_SUBMITTED)
                 ? 'Permohonan dokumen berhasil dikirimkan untuk Penilaian!'
                 : 'Draft permohonan berhasil disimpan.';
 
             return redirect()->route('projects.show', $project->id)->with('success', $msg);
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Failed to store project.', ['error' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Gagal menyimpan permohonan: ' . $e->getMessage());
         }
     }
@@ -184,59 +185,74 @@ class ProjectController extends Controller
             'submit_action' => ['required', 'in:draft,submit'],
         ]);
 
-        DB::beginTransaction();
         try {
-            $prevStatus = $project->status;
-            $newStatus = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : $prevStatus;
+            DB::transaction(function () use ($project, $validated, $request, $user) {
+                $prevStatus = $project->status;
+                $newStatus = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : $prevStatus;
 
-            $project->update([
-                'title' => $validated['title'],
-                'document_type_id' => $validated['document_type_id'],
-                'description' => $validated['description'] ?? null,
-                'status' => $newStatus,
-                'submitted_at' => ($newStatus === Project::STATUS_SUBMITTED) ? now() : $project->submitted_at,
-            ]);
-
-            if ($request->hasFile('document')) {
-                $file = $request->file('document');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
-
-                $latestVersion = ProjectDocument::where('project_id', $project->id)->max('version') ?? 0;
-
-                ProjectDocument::create([
-                    'project_id' => $project->id,
-                    'document_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_name' => $filename,
-                    'file_size' => $file->getSize(),
-                    'mime_type' => $file->getClientMimeType(),
-                    'version' => $latestVersion + 1,
-                    'uploaded_by' => $user->id,
+                $project->update([
+                    'title' => $validated['title'],
+                    'document_type_id' => $validated['document_type_id'],
+                    'description' => $validated['description'] ?? null,
+                    'status' => $newStatus,
+                    'submitted_at' => ($newStatus === Project::STATUS_SUBMITTED) ? now() : $project->submitted_at,
+                    'approved_at' => null,
+                    'rejected_at' => null,
                 ]);
-            }
 
-            $action = ($prevStatus === Project::STATUS_REVISION && $newStatus === Project::STATUS_SUBMITTED) 
-                ? 'resubmit' 
-                : (($newStatus === Project::STATUS_SUBMITTED) ? 'submit' : 'update_draft');
+                if ($request->hasFile('document')) {
+                    $file = $request->file('document');
+                    $filename = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
+                    $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
 
-            AssessmentLog::create([
-                'project_id' => $project->id,
-                'user_id' => $user->id,
-                'action' => $action,
-                'previous_status' => $prevStatus,
-                'new_status' => $newStatus,
-                'notes' => ($action === 'resubmit') 
-                    ? 'Pemohon telah mengunggah perbaikan dokumen dan mengirimkan ulang permohonan.' 
-                    : 'Pembaruan data permohonan.',
-            ]);
+                    $latestVersion = ProjectDocument::where('project_id', $project->id)->max('version') ?? 0;
 
-            DB::commit();
+                    ProjectDocument::create([
+                        'project_id' => $project->id,
+                        'document_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'file_name' => $filename,
+                        'file_size' => $file->getSize(),
+                        'mime_type' => $file->getClientMimeType(),
+                        'version' => $latestVersion + 1,
+                        'uploaded_by' => $user->id,
+                    ]);
+                }
+
+                $action = ($prevStatus === Project::STATUS_REVISION && $newStatus === Project::STATUS_SUBMITTED)
+                    ? 'resubmit'
+                    : (($newStatus === Project::STATUS_SUBMITTED) ? 'submit' : 'update_draft');
+
+                $this->workflow->logSubmission(
+                    project: $project,
+                    actor: $user,
+                    action: $action,
+                    previousStatus: $prevStatus,
+                    notes: ($action === 'resubmit')
+                        ? 'Pemohon telah mengunggah perbaikan dokumen dan mengirimkan ulang permohonan.'
+                        : 'Pembaruan data permohonan.',
+                );
+            });
 
             return redirect()->route('projects.show', $project->id)->with('success', 'Permohonan dokumen berhasil diperbarui!');
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Failed to update project.', ['project_id' => $id, 'error' => $e->getMessage()]);
             return back()->withInput()->with('error', 'Gagal memperbarui permohonan: ' . $e->getMessage());
         }
+    }
+
+    public function destroy($id)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $project = Project::findOrFail($id);
+
+        $this->authorize('delete', $project);
+
+        DB::transaction(function () use ($project) {
+            $project->delete();
+        });
+
+        return redirect()->route('projects.index')->with('success', 'Draft permohonan berhasil dihapus.');
     }
 }
