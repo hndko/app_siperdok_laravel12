@@ -1,11 +1,39 @@
-@import 'tailwindcss';
+/* SIPERDOK Custom Styling & AdminLTE 3.2 Enhancements */
+.main-header { border-bottom: 2px solid #007bff; }
+.brand-link { background-color: #1e293b; color: #fff !important; font-weight: bold; }
+.sidebar-dark-primary { background-color: #0f172a !important; }
+.badge-draft { background-color: #6c757d; color: #fff; }
+.badge-submitted { background-color: #17a2b8; color: #fff; }
+.badge-in_review { background-color: #ffc107; color: #1f2937; }
+.badge-revision { background-color: #fd7e14; color: #fff; }
+.badge-approved { background-color: #28a745; color: #fff; }
+.badge-rejected { background-color: #dc3545; color: #fff; }
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+.navbar-nav .user-menu {
+    display: flex;
+    align-items: center;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+.navbar-nav .user-menu .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-nav .user-menu .user-image {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-menu .dropdown-toggle::after {
+    display: inline-block;
+    margin-left: 0.255em;
+    vertical-align: 0.255em;
+}
+
+.content-wrapper {
+    min-height: calc(100vh - calc(3.5rem + 1px) - 3.5rem) !important;
 }

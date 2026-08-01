@@ -12,46 +12,46 @@
       </ul>
 
       <!-- Right navbar links -->
-      <ul class="navbar-nav ml-auto">
+      <ul class="navbar-nav ml-auto align-items-center">
         <!-- Notifications Dropdown -->
-        <li class="nav-item dropdown">
-          <a class="nav-link" data-toggle="dropdown" href="#">
-            <i class="far fa-bell"></i>
-            <span class="badge badge-warning navbar-badge">{{ unreadNotificationsCount }}</span>
+        <li class="nav-item dropdown mr-2">
+          <a class="nav-link position-relative" data-toggle="dropdown" href="#">
+            <i class="far fa-bell fa-lg"></i>
+            <span v-if="unreadNotificationsCount > 0" class="badge badge-warning navbar-badge position-absolute" style="top: 2px; right: 2px;">{{ unreadNotificationsCount }}</span>
           </a>
-          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-            <span class="dropdown-item dropdown-header">Notifikasi Sistem</span>
+          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow">
+            <span class="dropdown-item dropdown-header font-weight-bold">Notifikasi Sistem</span>
             <div class="dropdown-divider"></div>
             <Link 
               v-for="notif in notifications" 
               :key="notif.id" 
               :href="notif.project_id ? `/projects/${notif.project_id}` : '#'" 
-              class="dropdown-item"
+              class="dropdown-item py-2"
             >
               <i :class="['fas fa-info-circle mr-2', `text-${notif.type}`]"></i> 
               <span class="text-wrap small">{{ notif.title }}</span>
             </Link>
-            <div v-if="!notifications || !notifications.length" class="dropdown-item text-muted text-center">Tidak ada notifikasi baru</div>
+            <div v-if="!notifications || !notifications.length" class="dropdown-item text-muted text-center py-2">Tidak ada notifikasi baru</div>
           </div>
         </li>
 
-        <!-- User Menu -->
+        <!-- User Profile Dropdown -->
         <li class="nav-item dropdown user-menu">
-          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="user-image img-circle elevation-2" alt="User Image">
-            <span class="d-none d-md-inline font-weight-bold">{{ user ? user.name : 'User' }}</span>
+          <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown">
+            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="user-image img-circle elevation-1 mr-2" alt="User Image">
+            <span class="d-none d-md-inline font-weight-bold text-dark">{{ user ? user.name : 'User' }}</span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-            <li class="user-header bg-primary">
-              <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=fff&color=0D8ABC`" class="img-circle elevation-2" alt="User Image">
-              <p>
+          <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow">
+            <li class="user-header bg-primary text-center p-3">
+              <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=fff&color=0D8ABC`" class="img-circle elevation-2 mb-2" style="width: 70px; height: 70px;" alt="User Image">
+              <p class="mb-0 text-white font-weight-bold">
                 {{ user ? user.name : 'User' }}
-                <small>{{ user ? (user.company_name || 'Pengguna Sistem') : '' }}</small>
-                <span class="badge badge-light mt-1">{{ (userRole || 'USER').toUpperCase() }}</span>
               </p>
+              <small class="text-white-50 d-block">{{ user ? (user.company_name || 'Pengguna Sistem') : '' }}</small>
+              <span class="badge badge-light mt-2">{{ (userRole || 'USER').toUpperCase() }}</span>
             </li>
-            <li class="user-footer">
-              <Link href="/logout" method="post" as="button" class="btn btn-danger btn-flat btn-block">
+            <li class="user-footer p-2 bg-light">
+              <Link href="/logout" method="post" as="button" class="btn btn-danger btn-flat btn-block font-weight-bold">
                 <i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)
               </Link>
             </li>
@@ -73,8 +73,8 @@
             <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-white font-weight-bold">{{ user ? user.name : 'User' }}</a>
-            <span class="badge badge-success small"><i class="fas fa-circle text-xs mr-1"></i> Full Vue 3 SPA</span>
+            <a href="#" class="d-block text-white font-weight-bold text-truncate" style="max-width: 170px;">{{ user ? user.name : 'User' }}</a>
+            <span class="badge badge-success small"><i class="fas fa-circle text-xs mr-1"></i> Vue 3 SPA</span>
           </div>
         </div>
 
@@ -152,12 +152,12 @@
     <div class="content-wrapper">
       <div class="content-header">
         <div class="container-fluid">
-          <div class="row mb-2">
+          <div class="row mb-2 align-items-center">
             <div class="col-sm-6">
               <h1 class="m-0 font-weight-bold text-dark">{{ pageTitle }}</h1>
             </div>
             <div class="col-sm-6">
-              <ol class="breadcrumb float-sm-right">
+              <ol class="breadcrumb float-sm-right mb-0">
                 <li class="breadcrumb-item"><Link href="/dashboard">Beranda</Link></li>
                 <li class="breadcrumb-item active">{{ pageTitle }}</li>
               </ol>
@@ -168,13 +168,13 @@
 
       <section class="content">
         <div class="container-fluid">
-          <div v-if="flash.success" class="alert alert-success alert-dismissible fade show" role="alert">
+          <div v-if="flash.success" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
             <i class="fas fa-check-circle mr-2"></i> {{ flash.success }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div v-if="flash.error" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <div v-if="flash.error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
             <i class="fas fa-exclamation-circle mr-2"></i> {{ flash.error }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
               <span aria-hidden="true">&times;</span>
@@ -196,8 +196,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { computed, onMounted } from 'vue';
+import { usePage, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
   pageTitle: { type: String, default: 'Dashboard' }
@@ -215,4 +215,23 @@ const isPenilai = computed(() => userRole.value === 'penilai');
 const isAdmin = computed(() => userRole.value === 'admin');
 
 const currentPath = computed(() => window.location.pathname);
+
+const initAdminLTEWidgets = () => {
+  if (typeof $ !== 'undefined') {
+    // Re-initialize PushMenu & Treeview for AdminLTE
+    if ($.fn.PushMenu) {
+      $('[data-widget="pushmenu"]').PushMenu();
+    }
+    if ($.fn.Treeview) {
+      $('[data-widget="treeview"]').Treeview('init');
+    }
+  }
+};
+
+onMounted(() => {
+  initAdminLTEWidgets();
+  router.on('navigate', () => {
+    setTimeout(initAdminLTEWidgets, 100);
+  });
+});
 </script>
