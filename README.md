@@ -32,7 +32,7 @@ Seiring pesatnya pertumbuhan pengajuan izin kelayakan setiap tahunnya, instansi 
 ### 🎯 Fitur Utama
 
 - 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`) dengan layout terpisah `app-auth` & `app-modules`.
-- 💚 **Frontend Vue 3 Reaktif**: Komponen reaktif Vue 3 Single File Components (`StatusBadge.vue`, `DecisionModal.vue`) terintegrasi dengan Vite bundler.
+- 💚 **Frontend Vue 3 Reaktif**: Komponen reaktif Vue 3 Single File Components (`AppLayout.vue`, `DashboardPage.vue`, `ProjectIndexPage.vue`, `ProjectShowPage.vue`, `StatusBadge.vue`, `DecisionModal.vue`) terintegrasi dengan Vite bundler.
 - 📁 **Manajemen Permohonan & Berkas**: Pembuatan draft, upload dokumen dengan validasi format & ukuran (PDF/Docx/Image max 10MB), serta versioning berkas permohonan.
 - ⚖️ **Modul Penilaian & Keputusan**: Panel penilai untuk keputusan **Setuju (Approved)**, **Revisi (Revision)**, dan **Ditolak (Rejected)** dilengkapi catatan evaluasi dan notifikasi otomatis.
 - 📑 **Audit Trail & Histori Penilaian**: Catatan riwayat kronologis lengkap untuk setiap aksi perubahan status permohonan.
