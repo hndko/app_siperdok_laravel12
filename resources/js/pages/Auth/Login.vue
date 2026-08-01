@@ -50,7 +50,7 @@
 
         <form class="login-form" @submit.prevent="submit">
           <label class="form-field">
-            <span>Email</span>
+            <span>Email <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-envelope" aria-hidden="true"></i>
               <input
@@ -65,7 +65,7 @@
           </label>
 
           <label class="form-field">
-            <span>Password</span>
+            <span>Password <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-lock" aria-hidden="true"></i>
               <input

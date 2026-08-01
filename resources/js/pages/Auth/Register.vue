@@ -50,7 +50,7 @@
 
         <form class="register-form" @submit.prevent="submit">
           <label class="form-field form-field-wide">
-            <span>Nama Lengkap Pemohon / Penanggung Jawab</span>
+            <span>Nama Lengkap Pemohon / Penanggung Jawab <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-user" aria-hidden="true"></i>
               <input
@@ -64,7 +64,7 @@
           </label>
 
           <label class="form-field form-field-wide">
-            <span>Email Perusahaan / Resmi</span>
+            <span>Email Perusahaan / Resmi <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-envelope" aria-hidden="true"></i>
               <input
@@ -78,7 +78,7 @@
           </label>
 
           <label class="form-field">
-            <span>No. Telepon / WhatsApp</span>
+            <span>No. Telepon / WhatsApp <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-phone" aria-hidden="true"></i>
               <input
@@ -92,7 +92,7 @@
           </label>
 
           <label class="form-field">
-            <span>NIK / NIP Pemohon</span>
+            <span>NIK / NIP Pemohon <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-id-card" aria-hidden="true"></i>
               <input
@@ -105,7 +105,7 @@
           </label>
 
           <label class="form-field form-field-wide">
-            <span>Nama Perusahaan / Instansi Pemohon</span>
+            <span>Nama Perusahaan / Instansi Pemohon <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-building" aria-hidden="true"></i>
               <input
@@ -119,7 +119,7 @@
           </label>
 
           <label class="form-field">
-            <span>Password</span>
+            <span>Password <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-lock" aria-hidden="true"></i>
               <input
@@ -133,7 +133,7 @@
           </label>
 
           <label class="form-field">
-            <span>Konfirmasi Password</span>
+            <span>Konfirmasi Password <span class="required-mark" aria-hidden="true">*</span></span>
             <div class="field-control">
               <i class="fas fa-check-circle" aria-hidden="true"></i>
               <input

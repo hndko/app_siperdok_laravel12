@@ -185,6 +185,10 @@
   font-weight: 700;
 }
 
+.required-mark {
+  color: #dc2626;
+}
+
 .field-control {
   min-height: 48px;
   display: flex;
