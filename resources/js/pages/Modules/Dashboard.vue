@@ -132,8 +132,8 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
-import AppLayout from '../layouts/AppLayout.vue';
-import StatusBadge from '../components/StatusBadge.vue';
+import AppLayout from '../../layouts/AppLayout.vue';
+import StatusBadge from '../../components/StatusBadge.vue';
 
 const props = defineProps({
   totalProjects: { type: Number, default: 0 },

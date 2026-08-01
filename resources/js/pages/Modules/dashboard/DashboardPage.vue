@@ -131,8 +131,8 @@
 
 <script setup>
 import { onMounted } from 'vue';
-import AppLayout from '../../layouts/AppLayout.vue';
-import StatusBadge from '../../components/StatusBadge.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
+import StatusBadge from '../../../components/StatusBadge.vue';
 
 const props = defineProps({
   user: { type: Object, required: true },

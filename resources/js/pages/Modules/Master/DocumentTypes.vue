@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import AppLayout from '../../layouts/AppLayout.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   documentTypes: { type: Array, default: () => [] }

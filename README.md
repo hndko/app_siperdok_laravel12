@@ -14,6 +14,7 @@ SIPERDOK adalah aplikasi web untuk mengelola pengajuan, penilaian, revisi, dan p
   - [🗄️ Struktur Database](#️-struktur-database)
   - [👥 Role dan Hak Akses](#-role-dan-hak-akses)
   - [✨ Fitur Utama](#-fitur-utama)
+  - [🧭 Struktur Frontend](#-struktur-frontend)
   - [📋 Prasyarat](#-prasyarat)
   - [⚙️ Instalasi](#️-instalasi)
   - [🚀 Penggunaan](#-penggunaan)
@@ -206,6 +207,32 @@ export-reports
 - 📚 Master jenis dokumen untuk admin.
 - 📤 Ekspor laporan permohonan dalam format CSV dan Excel `.xlsx`.
 - 📄 Preview dan unduh surat pengesahan PDF untuk permohonan berstatus `approved`.
+
+---
+
+## 🧭 Struktur Frontend
+
+Halaman Vue disusun berdasarkan domain agar konsisten dengan struktur REST API:
+
+```text
+resources/js/pages/
+├── Auth/
+│   ├── Login.vue
+│   └── Register.vue
+└── Modules/
+    ├── Assessments/
+    ├── Dashboard.vue
+    ├── Exports/
+    ├── Master/
+    ├── dashboard/
+    └── projects/
+```
+
+Aturan struktur:
+
+- `Auth` berada di luar `Modules` karena autentikasi adalah domain khusus.
+- Semua halaman fitur seperti dashboard, project, assessment, export, dan master data berada di dalam `Modules`.
+- `routes/web.php` hanya melakukan mapping path SPA ke komponen Vue tersebut.
 
 ---
 

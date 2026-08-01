@@ -92,7 +92,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import AppLayout from '../../layouts/AppLayout.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   project: { type: Object, required: true }

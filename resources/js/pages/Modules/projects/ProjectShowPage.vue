@@ -1,5 +1,5 @@
 <template>
-  <app-layout :page-title="`Detail Permohonan: ${project.project_number}`">
+  <app-layout :user="user" :user-role="userRole" :page-title="`Detail Permohonan: ${project.project_number}`" :csrf-token="csrfToken">
     <div class="row">
       <div class="col-md-8">
         <!-- Main Project Info Card -->
@@ -57,25 +57,20 @@
               <i class="fas fa-award text-success fa-3x mb-2"></i>
               <h5 class="font-weight-bold text-success">DOKUMEN TELAH DISETUJUI & DITERBITKAN</h5>
               <p class="small text-muted mb-3">Dokumen kelayakan ini telah memenuhi seluruh kriteria dan disahkan oleh Penilai.</p>
-              <div class="d-flex justify-content-center gap-2">
-                <Link :href="`/exports/projects/${project.id}/certificate/preview`" class="btn btn-outline-success font-weight-bold mr-2">
-                  <i class="fas fa-eye mr-1"></i> Pratinjau Surat (Vue 3)
-                </Link>
-                <button type="button" class="btn btn-success font-weight-bold" @click="downloadCertificate">
-                  <i class="fas fa-file-pdf mr-1"></i> Unduh Surat Pengesahan Dokumen (PDF)
-                </button>
-              </div>
+                <a :href="`/api/v1/exports/projects/${project.id}/certificate`" class="btn btn-success font-weight-bold">
+                <i class="fas fa-file-pdf mr-1"></i> Unduh Surat Pengesahan Dokumen (PDF)
+              </a>
             </div>
           </div>
           <div class="card-footer d-flex justify-content-between">
-            <Link href="/projects" class="btn btn-secondary"><i class="fas fa-arrow-left mr-1"></i> Kembali</Link>
+            <a href="/projects" class="btn btn-secondary"><i class="fas fa-arrow-left mr-1"></i> Kembali</a>
             <div>
-              <Link v-if="['draft', 'revision'].includes(project.status) && user && user.id === project.applicant_id" :href="`/projects/${project.id}/edit`" class="btn btn-warning font-weight-bold">
+              <a v-if="['draft', 'revision'].includes(project.status) && user.id === project.applicant_id" :href="`/projects/${project.id}/edit`" class="btn btn-warning font-weight-bold">
                 <i class="fas fa-edit mr-1"></i> {{ project.status === 'revision' ? 'Perbaiki Dokumen (Submit Ulang)' : 'Edit Draft' }}
-              </Link>
-              <Link v-if="userRole === 'penilai' || userRole === 'admin'" :href="`/assessments/${project.id}/review`" class="btn btn-primary font-weight-bold ml-2">
+              </a>
+              <a v-if="userRole === 'penilai' || userRole === 'admin'" :href="`/assessments/${project.id}/review`" class="btn btn-primary font-weight-bold ml-2">
                 <i class="fas fa-tasks mr-1"></i> Lakukan Penilaian Dokumen
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -111,18 +106,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
-import AppLayout from '../../layouts/AppLayout.vue';
-import StatusBadge from '../../components/StatusBadge.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
+import StatusBadge from '../../../components/StatusBadge.vue';
 
 const props = defineProps({
+  user: { type: Object, required: true },
+  userRole: { type: String, default: 'pemohon' },
+  csrfToken: { type: String, required: true },
   project: { type: Object, required: true }
 });
-
-const page = usePage();
-const user = computed(() => page.props.auth ? page.props.auth.user : null);
-const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';
@@ -141,17 +133,5 @@ const getLogIcon = (action) => {
     case 'resubmit': return 'fas fa-redo bg-primary';
     default: return 'fas fa-info bg-secondary';
   }
-};
-
-const downloadCertificate = async () => {
-  const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
 };
 </script>

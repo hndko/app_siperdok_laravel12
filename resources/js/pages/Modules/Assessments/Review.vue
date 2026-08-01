@@ -166,8 +166,8 @@
 
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3';
-import AppLayout from '../../layouts/AppLayout.vue';
-import StatusBadge from '../../components/StatusBadge.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
+import StatusBadge from '../../../components/StatusBadge.vue';
 
 const props = defineProps({
   project: { type: Object, required: true },

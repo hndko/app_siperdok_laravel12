@@ -74,7 +74,7 @@
 <script setup>
 import { reactive } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
-import AppLayout from '../../layouts/AppLayout.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   logs: { type: Object, required: true },

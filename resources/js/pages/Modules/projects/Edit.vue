@@ -68,7 +68,7 @@
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import AppLayout from '../../layouts/AppLayout.vue';
+import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   project: { type: Object, required: true },
