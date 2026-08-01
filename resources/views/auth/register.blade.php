@@ -1,22 +1,17 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registrasi Akun Pemohon | SIPERDOK</title>
+@extends('layouts.app-auth')
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome-free/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/dist/css/adminlte.min.css') }}">
-    <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px 0; }
-        .register-box { width: 520px; }
-        .card { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    </style>
-</head>
-<body class="hold-transition register-page">
+@section('title', 'Registrasi Akun Pemohon')
+@section('body-class', 'register-page')
+
+@push('styles')
+<style>
+    .register-box { width: 520px; }
+</style>
+@endpush
+
+@section('content')
 <div class="register-box">
-    <div class="card card-outline card-success">
+    <div class="card card-outline card-success auth-card">
         <div class="card-header text-center py-3">
             <a href="#" class="h2 text-dark font-weight-bold">
                 <i class="fas fa-file-contract text-success mr-2"></i><b>SI PERDOK</b>
@@ -82,5 +77,4 @@
         </div>
     </div>
 </div>
-</body>
-</html>
+@endsection

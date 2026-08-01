@@ -1,23 +1,18 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login | SIPERDOK</title>
+@extends('layouts.app-auth')
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome-free/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/dist/css/adminlte.min.css') }}">
-    <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); height: 100vh; }
-        .login-box { width: 420px; }
-        .card { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .btn-role { border-radius: 8px; font-weight: 600; text-align: left; }
-    </style>
-</head>
-<body class="hold-transition login-page">
+@section('title', 'Login')
+@section('body-class', 'login-page')
+
+@push('styles')
+<style>
+    .login-box { width: 420px; }
+    .btn-role { border-radius: 8px; font-weight: 600; text-align: left; }
+</style>
+@endpush
+
+@section('content')
 <div class="login-box">
-    <div class="card card-outline card-primary">
+    <div class="card card-outline card-primary auth-card">
         <div class="card-header text-center py-4">
             <a href="#" class="h2 text-dark font-weight-bold">
                 <i class="fas fa-file-contract text-primary mr-2"></i><b>SI PERDOK</b>
@@ -86,12 +81,13 @@
         </div>
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
     function fillLogin(email, pass) {
         document.getElementById('email').value = email;
         document.getElementById('password').value = pass;
     }
 </script>
-</body>
-</html>
+@endpush
