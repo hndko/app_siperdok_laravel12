@@ -6,12 +6,12 @@ use App\Models\Project;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
+use Inertia\Inertia;
 
 class ExportController extends Controller
 {
     public function exportProjectsCsv(Request $request)
     {
-        // Eager load applicant, evaluator, and documentType for fast CSV streaming
         $query = Project::with(['applicant', 'evaluator', 'documentType']);
 
         if ($request->filled('status')) {
@@ -48,9 +48,19 @@ class ExportController extends Controller
         ]);
     }
 
+    public function previewCertificate($id)
+    {
+        $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents'])->findOrFail($id);
+
+        if ($project->status !== Project::STATUS_APPROVED) {
+            return back()->with('error', 'Surat pengesahan hanya tersedia untuk permohonan yang telah DISETUJU.');
+        }
+
+        return Inertia::render('Exports/CertificatePreview', compact('project'));
+    }
+
     public function exportCertificatePdf($id)
     {
-        // Eager load applicant, evaluator, documentType, and documents with uploader for PDF generation
         $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents.uploader'])->findOrFail($id);
 
         if ($project->status !== Project::STATUS_APPROVED) {

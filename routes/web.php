@@ -47,5 +47,6 @@ Route::middleware('auth')->group(function () {
 
     // Export Routes
     Route::get('/export/projects/csv', [ExportController::class, 'exportProjectsCsv'])->name('export.projects.csv');
+    Route::get('/export/projects/{id}/certificate/preview', [ExportController::class, 'previewCertificate'])->name('export.certificate.preview');
     Route::get('/export/projects/{id}/certificate', [ExportController::class, 'exportCertificatePdf'])->name('export.certificate.pdf');
 });

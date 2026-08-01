@@ -1,0 +1,119 @@
+<template>
+  <app-layout :page-title="`Surat Pengesahan: ${project.project_number}`">
+    <div class="row justify-content-center">
+      <div class="col-md-9">
+        <div class="card card-outline card-success shadow">
+          <div class="card-header d-flex justify-content-between align-items-center no-print">
+            <h3 class="card-title font-weight-bold text-success">
+              <i class="fas fa-award mr-2"></i> Pratinjau Surat Pengesahan Dokumen (Vue 3 Component)
+            </h3>
+            <div>
+              <button @click="printCertificate" class="btn btn-primary btn-sm mr-2 font-weight-bold">
+                <i class="fas fa-print mr-1"></i> Cetak Surat (Print)
+              </button>
+              <a :href="`/export/projects/${project.id}/certificate`" class="btn btn-success btn-sm font-weight-bold">
+                <i class="fas fa-file-pdf mr-1"></i> Unduh File PDF
+              </a>
+            </div>
+          </div>
+
+          <div class="card-body p-5 certificate-print-area bg-white">
+            <div class="header text-center border-bottom pb-3 mb-4">
+              <h4 class="font-weight-bold text-uppercase mb-1" style="letter-spacing: 1px;">REPUBLIK INDONESIA</h4>
+              <h6 class="text-secondary mb-0">SISTEM INFORMASI PERSETUJUAN DOKUMEN KELAYAKAN (SIPERDOK)</h6>
+              <small class="text-muted">Kementerian / Instansi Lingkungan Hidup dan Kehutanan</small>
+            </div>
+
+            <div class="text-center mb-4">
+              <h4 class="font-weight-bold text-uppercase text-underline text-dark" style="text-decoration: underline;">SURAT PENGESAHAN KELAYAKAN DOKUMEN</h4>
+              <div class="text-muted small">Nomor Penerbitan: SK-SIPERDOK/{{ year }}/{{ project.project_number }}</div>
+            </div>
+
+            <div class="content text-secondary mb-4" style="font-size: 1.05rem;">
+              <p>Berdasarkan hasil evaluasi dan penilaian teknis yang dilakukan oleh Tim Evaluator Dokumen Kelayakan, bersama ini menerangkan bahwa permohonan dokumen kelayakan berikut:</p>
+
+              <table class="table table-borderless my-4">
+                <tbody>
+                  <tr>
+                    <td class="font-weight-bold" style="width: 35%;">Nomor Permohonan</td>
+                    <td>: <strong class="text-primary">{{ project.project_number }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Judul Kegiatan / Proyek</td>
+                    <td>: {{ project.title }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Jenis Dokumen</td>
+                    <td>: {{ project.document_type ? project.document_type.name : '-' }} ({{ project.document_type ? project.document_type.code : '-' }})</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Nama Pemohon</td>
+                    <td>: {{ project.applicant ? project.applicant.name : '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Perusahaan / Instansi</td>
+                    <td>: {{ project.applicant ? project.applicant.company_name : '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Tanggal Pengajuan</td>
+                    <td>: {{ project.submitted_at ? formatDate(project.submitted_at) : '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-weight-bold">Tanggal Disetujui</td>
+                    <td>: {{ project.approved_at ? formatDate(project.approved_at) : formatDate(new Date()) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="stamp-box p-4 border border-success rounded text-center my-4" style="background-color: #f8fff9;">
+                <h4 class="font-weight-bold text-success mb-1">STATUS: DISETUJU (APPROVED)</h4>
+                <div class="small text-muted">Dokumen dinyatakan LENGKAP, SAH, dan MEMENUHI SYARAT KELAYAKAN LINGKUNGAN</div>
+              </div>
+
+              <p>Demikian Surat Pengesahan Kelayakan Dokumen ini diterbitkan secara elektronik melalui sistem SIPERDOK untuk dipergunakan sebagaimana mestinya.</p>
+            </div>
+
+            <div class="row mt-5">
+              <div class="col-md-6 offset-md-6 text-center">
+                <p class="mb-1">Ditetapkan di Jakarta<br>Pada Tanggal: {{ project.approved_at ? formatDate(project.approved_at) : formatDate(new Date()) }}</p>
+                <p class="font-weight-bold mb-5">An. Tim Evaluator Penilai Dokumen</p>
+                <p class="font-weight-bold text-dark mb-0 text-underline" style="text-decoration: underline;">
+                  {{ project.evaluator ? project.evaluator.name : 'Dr. Hendra Penilai' }}
+                </p>
+                <small class="text-muted d-block">NIP. {{ project.evaluator ? (project.evaluator.nip_nik || '197505052002121002') : '197505052002121002' }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import AppLayout from '../../layouts/AppLayout.vue';
+
+const props = defineProps({
+  project: { type: Object, required: true }
+});
+
+const year = computed(() => new Date().getFullYear());
+
+const printCertificate = () => {
+  window.print();
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+</script>
+
+<style scoped>
+@media print {
+  .no-print { display: none !important; }
+  .certificate-print-area { padding: 0 !important; }
+}
+</style>
