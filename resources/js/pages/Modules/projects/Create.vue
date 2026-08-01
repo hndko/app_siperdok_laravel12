@@ -62,12 +62,13 @@
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   documentTypes: { type: Array, default: () => [] }
 });
+const documentTypes = ref(props.documentTypes);
 
 const page = usePage();
 const errors = computed(() => page.props.errors || {});
@@ -106,4 +107,9 @@ const submit = () => {
   form.submit_action = 'submit';
   submitProject('submit');
 };
+
+onMounted(async () => {
+  const response = await window.axios.get('/api/v1/document-types');
+  documentTypes.value = response.data.data || [];
+});
 </script>

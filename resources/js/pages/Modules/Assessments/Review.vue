@@ -165,7 +165,8 @@
 </template>
 
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 
@@ -174,6 +175,10 @@ const props = defineProps({
   canStartReview: { type: Boolean, default: false },
   canAssess: { type: Boolean, default: false }
 });
+const project = ref(props.project);
+const currentRole = ref('pemohon');
+const canStartReview = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'submitted');
+const canAssess = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
 
 const startReviewForm = useForm({
   notes: '',
@@ -185,18 +190,18 @@ const form = useForm({
 });
 
 const startReview = async () => {
-  await window.axios.post(`/api/v1/assessments/${props.project.id}/start-review`, {
+  await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
     notes: startReviewForm.notes,
   });
-  window.location.reload();
+  await loadProject();
 };
 
 const submitDecision = async () => {
-  await window.axios.post(`/api/v1/assessments/${props.project.id}`, {
+  await window.axios.post(`/api/v1/assessments/${project.value.id}`, {
     decision: form.decision,
     notes: form.notes,
   });
-  window.location.reload();
+  await loadProject();
 };
 
 const formatDate = (dateStr) => {
@@ -204,4 +209,20 @@ const formatDate = (dateStr) => {
   const d = new Date(dateStr);
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
+
+const loadProject = async () => {
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const id = segments[1];
+  const response = await window.axios.get(`/api/v1/projects/${id}`);
+  project.value = response.data.data;
+};
+
+const loadMe = async () => {
+  const response = await window.axios.get('/api/v1/me');
+  currentRole.value = response.data.data.role || 'pemohon';
+};
+
+onMounted(async () => {
+  await Promise.all([loadProject(), loadMe()]);
+});
 </script>

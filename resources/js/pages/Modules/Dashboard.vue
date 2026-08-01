@@ -130,7 +130,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import AppLayout from '../../layouts/AppLayout.vue';
 import StatusBadge from '../../components/StatusBadge.vue';
@@ -150,6 +150,16 @@ const props = defineProps({
 
 const page = usePage();
 const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
+const totalProjects = ref(props.totalProjects);
+const approvedCount = ref(props.approvedCount);
+const revisionCount = ref(props.revisionCount);
+const rejectedCount = ref(props.rejectedCount);
+const pendingCount = ref(props.pendingCount);
+const draftCount = ref(props.draftCount);
+const recentProjects = ref(props.recentProjects);
+const chartLabels = ref(props.chartLabels);
+const chartValues = ref(props.chartValues);
+const statusCounts = ref(props.statusCounts);
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 const truncate = (str, len) => str && str.length > len ? str.substring(0, len) + '...' : str;
@@ -160,17 +170,17 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-onMounted(() => {
+const renderCharts = () => {
   if (typeof Chart !== 'undefined') {
     const monthlyCtx = document.getElementById('vueMonthlyChart');
     if (monthlyCtx) {
       new Chart(monthlyCtx.getContext('2d'), {
         type: 'line',
         data: {
-          labels: props.chartLabels,
+          labels: chartLabels.value,
           datasets: [{
             label: 'Jumlah Pengajuan',
-            data: props.chartValues,
+            data: chartValues.value,
             borderColor: '#007bff',
             backgroundColor: 'rgba(0, 123, 255, 0.1)',
             borderWidth: 2,
@@ -191,9 +201,9 @@ onMounted(() => {
       new Chart(statusCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
-          labels: Object.keys(props.statusCounts),
+          labels: Object.keys(statusCounts.value),
           datasets: [{
-            data: Object.values(props.statusCounts),
+            data: Object.values(statusCounts.value),
             backgroundColor: ['#6c757d', '#ffc107', '#fd7e14', '#28a745', '#dc3545']
           }]
         },
@@ -205,5 +215,26 @@ onMounted(() => {
       });
     }
   }
+};
+
+const loadDashboard = async () => {
+  const response = await window.axios.get('/api/v1/dashboard');
+  const data = response.data.data;
+
+  totalProjects.value = data.total_projects;
+  approvedCount.value = data.approved_count;
+  revisionCount.value = data.revision_count;
+  rejectedCount.value = data.rejected_count;
+  pendingCount.value = data.pending_count;
+  draftCount.value = data.draft_count;
+  recentProjects.value = data.recent_projects.data || [];
+  chartLabels.value = data.chart_labels || [];
+  chartValues.value = data.chart_values || [];
+  statusCounts.value = data.status_counts || {};
+};
+
+onMounted(async () => {
+  await loadDashboard();
+  renderCharts();
 });
 </script>

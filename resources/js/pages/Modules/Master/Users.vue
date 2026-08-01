@@ -67,22 +67,23 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { onMounted, reactive, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   users: { type: Object, required: true },
   filters: { type: Object, default: () => ({}) }
 });
+const users = ref(props.users);
 
 const form = reactive({
   search: props.filters.search || '',
   role: props.filters.role || '',
 });
 
-const filter = () => {
-  router.get('/master/users', form, { preserveState: true });
+const filter = async () => {
+  const response = await window.axios.get('/api/v1/users', { params: form });
+  users.value = response.data.data;
 };
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
@@ -94,4 +95,8 @@ const getRoleBadge = (roleName) => {
     default: return 'badge-primary';
   }
 };
+
+onMounted(() => {
+  filter();
+});
 </script>

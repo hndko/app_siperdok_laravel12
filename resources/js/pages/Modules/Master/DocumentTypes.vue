@@ -42,11 +42,20 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   documentTypes: { type: Array, default: () => [] }
 });
+const documentTypes = ref(props.documentTypes);
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
+
+onMounted(async () => {
+  const response = await window.axios.get('/api/v1/document-types', {
+    params: { include_inactive: 1 },
+  });
+  documentTypes.value = response.data.data || [];
+});
 </script>

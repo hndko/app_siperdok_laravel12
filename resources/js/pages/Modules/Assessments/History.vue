@@ -72,22 +72,24 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { onMounted, reactive, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   logs: { type: Object, required: true },
   filters: { type: Object, default: () => ({}) }
 });
+const logs = ref(props.logs);
 
 const form = reactive({
   search: props.filters.search || '',
   action: props.filters.action || '',
 });
 
-const filter = () => {
-  router.get('/assessments/history', form, { preserveState: true });
+const filter = async () => {
+  const response = await window.axios.get('/api/v1/assessments/history', { params: form });
+  logs.value = response.data;
 };
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
@@ -107,4 +109,8 @@ const getActionBadge = (action) => {
     default: return 'badge-secondary';
   }
 };
+
+onMounted(() => {
+  filter();
+});
 </script>

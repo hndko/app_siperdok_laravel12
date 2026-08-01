@@ -111,8 +111,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 
@@ -120,9 +120,23 @@ const props = defineProps({
   project: { type: Object, required: true }
 });
 
-const page = usePage();
-const user = computed(() => page.props.auth ? page.props.auth.user : null);
-const userRole = computed(() => page.props.auth ? page.props.auth.role : 'pemohon');
+const project = ref(props.project);
+const currentUser = ref(null);
+const currentRole = ref('pemohon');
+const user = computed(() => currentUser.value);
+const userRole = computed(() => currentRole.value);
+
+const loadProject = async () => {
+  const id = window.location.pathname.split('/').filter(Boolean).at(-1);
+  const response = await window.axios.get(`/api/v1/projects/${id}`);
+  project.value = response.data.data;
+};
+
+const loadMe = async () => {
+  const response = await window.axios.get('/api/v1/me');
+  currentUser.value = response.data.data.user;
+  currentRole.value = response.data.data.role || 'pemohon';
+};
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';
@@ -144,14 +158,18 @@ const getLogIcon = (action) => {
 };
 
 const downloadCertificate = async () => {
-  const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
+  const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
     responseType: 'blob',
   });
   const url = URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
+  link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
   link.click();
   URL.revokeObjectURL(url);
 };
+
+onMounted(async () => {
+  await Promise.all([loadProject(), loadMe()]);
+});
 </script>

@@ -21,6 +21,7 @@ class HistoryApiController extends Controller
         $validated = $request->validate([
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'action' => ['nullable', 'string', 'max:50'],
+            'search' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -34,6 +35,13 @@ class HistoryApiController extends Controller
             ->whereHas('project', fn ($query) => $query->visibleTo($user))
             ->when($validated['project_id'] ?? null, fn ($query, $id) => $query->where('project_id', $id))
             ->when($validated['action'] ?? null, fn ($query, $action) => $query->where('action', $action))
+            ->when($validated['search'] ?? null, function ($query, $search) {
+                $query->whereHas('project', function ($projectQuery) use ($search) {
+                    $projectQuery
+                        ->where('project_number', 'like', "%{$search}%")
+                        ->orWhere('title', 'like', "%{$search}%");
+                });
+            })
             ->orderByDesc('created_at')
             ->cursorPaginate($validated['per_page'] ?? 20)
             ->withQueryString();

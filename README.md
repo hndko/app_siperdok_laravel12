@@ -224,7 +224,6 @@ resources/js/pages/
     ├── Dashboard.vue
     ├── Exports/
     ├── Master/
-    ├── dashboard/
     └── projects/
 ```
 
@@ -233,6 +232,7 @@ Aturan struktur:
 - `Auth` berada di luar `Modules` karena autentikasi adalah domain khusus.
 - Semua halaman fitur seperti dashboard, project, assessment, export, dan master data berada di dalam `Modules`.
 - `routes/web.php` hanya melakukan mapping path SPA ke komponen Vue tersebut.
+- Komponen Vue mengambil data, memproses filter, submit form, logout, dan export melalui REST API `/api/v1`.
 
 ---
 

@@ -67,25 +67,42 @@
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 
 const props = defineProps({
   project: { type: Object, required: true },
   documentTypes: { type: Array, default: () => [] }
 });
+const project = ref(props.project);
+const documentTypes = ref(props.documentTypes);
 
 const page = usePage();
 const errors = computed(() => page.props.errors || {});
 
 const form = useForm({
   _method: 'PUT',
-  title: props.project.title,
-  document_type_id: props.project.document_type_id,
+  title: props.project.title || '',
+  document_type_id: props.project.document_type_id || '',
   description: props.project.description || '',
   document: null,
   submit_action: 'submit',
 });
+
+const loadProject = async () => {
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const id = segments[1];
+  const response = await window.axios.get(`/api/v1/projects/${id}`);
+  project.value = response.data.data;
+  form.title = project.value.title || '';
+  form.document_type_id = project.value.document_type_id || project.value.document_type?.id || '';
+  form.description = project.value.description || '';
+};
+
+const loadDocumentTypes = async () => {
+  const response = await window.axios.get('/api/v1/document-types');
+  documentTypes.value = response.data.data || [];
+};
 
 const handleFile = (e) => {
   form.document = e.target.files[0];
@@ -103,8 +120,8 @@ const submitProject = async (action) => {
     payload.append('document', form.document);
   }
 
-  await window.axios.post(`/api/v1/projects/${props.project.id}`, payload);
-  window.location.href = `/projects/${props.project.id}`;
+  await window.axios.post(`/api/v1/projects/${project.value.id}`, payload);
+  window.location.href = `/projects/${project.value.id}`;
 };
 
 const saveDraft = () => {
@@ -116,4 +133,8 @@ const submit = () => {
   form.submit_action = 'submit';
   submitProject('submit');
 };
+
+onMounted(async () => {
+  await Promise.all([loadProject(), loadDocumentTypes()]);
+});
 </script>

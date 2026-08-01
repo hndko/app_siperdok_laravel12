@@ -90,8 +90,8 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { onMounted, reactive, ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 
@@ -100,6 +100,8 @@ const props = defineProps({
   documentTypes: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) }
 });
+const projects = ref(props.projects);
+const documentTypes = ref(props.documentTypes);
 
 const form = reactive({
   search: props.filters.search || '',
@@ -107,8 +109,14 @@ const form = reactive({
   document_type_id: props.filters.document_type_id || '',
 });
 
-const filter = () => {
-  router.get('/projects', form, { preserveState: true });
+const loadDocumentTypes = async () => {
+  const response = await window.axios.get('/api/v1/document-types');
+  documentTypes.value = response.data.data || [];
+};
+
+const filter = async () => {
+  const response = await window.axios.get('/api/v1/projects', { params: form });
+  projects.value = response.data;
 };
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
@@ -119,4 +127,8 @@ const formatDate = (dateStr) => {
   const d = new Date(dateStr);
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
+
+onMounted(async () => {
+  await Promise.all([filter(), loadDocumentTypes()]);
+});
 </script>
