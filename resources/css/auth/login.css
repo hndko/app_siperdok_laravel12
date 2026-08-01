@@ -140,27 +140,6 @@
   line-height: 1.6;
 }
 
-.auth-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.auth-alert-info {
-  background: #e0f2fe;
-  color: #075985;
-}
-
-.auth-alert-danger {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
 .login-form {
   display: grid;
   gap: 16px;

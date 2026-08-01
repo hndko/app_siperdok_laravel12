@@ -142,27 +142,6 @@
   line-height: 1.6;
 }
 
-.auth-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.auth-alert-danger {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.auth-alert ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
 .register-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

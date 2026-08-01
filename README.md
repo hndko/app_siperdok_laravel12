@@ -101,6 +101,7 @@ Library frontend dan aset UI:
 - ⭐ **Font Awesome** untuk ikon antarmuka.
 - 📈 **Chart.js** untuk grafik dashboard.
 - 🔗 **Axios** untuk HTTP client REST API dengan Bearer Token Sanctum.
+- 🔔 **SweetAlert2** untuk toast notifikasi dan modal konfirmasi.
 - 🎨 **Tailwind CSS `^4.0`** melalui plugin Vite.
 
 ---
@@ -207,6 +208,7 @@ export-reports
 - 📚 Master jenis dokumen untuk admin.
 - 📤 Ekspor laporan permohonan dalam format CSV dan Excel `.xlsx`.
 - 📄 Preview dan unduh surat pengesahan PDF untuk permohonan berstatus `approved`.
+- 🔔 Toast untuk notifikasi sukses/gagal dan SweetAlert untuk konfirmasi aksi penting.
 
 ---
 

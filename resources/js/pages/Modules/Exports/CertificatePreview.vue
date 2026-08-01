@@ -93,6 +93,7 @@
 <script setup>
 import { computed } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import { apiErrorMessage, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, required: true }
@@ -105,15 +106,20 @@ const printCertificate = () => {
 };
 
 const downloadCertificate = async () => {
-  const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
+  try {
+    const response = await window.axios.get(`/api/v1/exports/projects/${props.project.id}/certificate`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Surat_Pengesahan_${props.project.project_number}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('success', 'Surat pengesahan berhasil diunduh.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Surat pengesahan gagal diunduh.'));
+  }
 };
 
 const formatDate = (dateStr) => {

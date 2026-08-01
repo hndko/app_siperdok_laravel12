@@ -10,15 +10,9 @@
           </div>
           <form @submit.prevent="submit">
             <div class="card-body">
-              <div v-if="project.status === 'revision'" class="alert alert-warning py-3 mb-4">
+              <div v-if="project.status === 'revision'" class="callout callout-warning py-3 mb-4">
                 <h6 class="font-weight-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Permohonan Ini Memerlukan Revisi dari Penilai</h6>
                 <p class="mb-0 small">Silakan perbaiki data atau unggah versi dokumen terbaru sesuai catatan perbaikan Penilai.</p>
-              </div>
-
-              <div v-if="Object.keys(errors).length" class="alert alert-danger py-2 small mb-3">
-                <ul class="mb-0 pl-3">
-                  <li v-for="(err, key) in errors" :key="key">{{ err }}</li>
-                </ul>
               </div>
 
               <div class="form-group mb-3">
@@ -67,8 +61,9 @@
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, required: true },
@@ -109,6 +104,20 @@ const handleFile = (e) => {
 };
 
 const submitProject = async (action) => {
+  const confirmed = await confirmAction({
+    title: action === 'draft' ? 'Simpan pembaruan draft?' : 'Kirim ulang permohonan?',
+    text: action === 'draft'
+      ? 'Perubahan akan disimpan tanpa masuk ulang ke penilaian.'
+      : 'Permohonan revisi akan dikirim kembali ke penilai.',
+    icon: action === 'draft' ? 'question' : 'warning',
+    confirmButtonText: action === 'draft' ? 'Ya, simpan' : 'Ya, kirim ulang',
+    confirmButtonColor: action === 'draft' ? '#007bff' : '#28a745',
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
   const payload = new FormData();
   form.submit_action = action;
   payload.append('title', form.title);
@@ -120,8 +129,17 @@ const submitProject = async (action) => {
     payload.append('document', form.document);
   }
 
-  await window.axios.post(`/api/v1/projects/${project.value.id}`, payload);
-  window.location.href = `/projects/${project.value.id}`;
+  try {
+    await window.axios.post(`/api/v1/projects/${project.value.id}`, payload);
+    toast('success', action === 'draft' ? 'Draft berhasil diperbarui.' : 'Permohonan berhasil dikirim ulang.');
+    setTimeout(() => {
+      window.location.href = `/projects/${project.value.id}`;
+    }, 600);
+  } catch (error) {
+    apiErrorMessages(error, 'Permohonan gagal diperbarui.')
+      .slice(0, 3)
+      .forEach((message) => toast('error', message));
+  }
 };
 
 const saveDraft = () => {
@@ -137,4 +155,14 @@ const submit = () => {
 onMounted(async () => {
   await Promise.all([loadProject(), loadDocumentTypes()]);
 });
+
+watch(
+  errors,
+  (value) => {
+    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
+      toast('error', message);
+    });
+  },
+  { immediate: true }
+);
 </script>

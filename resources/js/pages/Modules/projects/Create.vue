@@ -10,12 +10,6 @@
           </div>
           <form @submit.prevent="submit">
             <div class="card-body">
-              <div v-if="Object.keys(errors).length" class="alert alert-danger py-2 small mb-3">
-                <ul class="mb-0 pl-3">
-                  <li v-for="(err, key) in errors" :key="key">{{ err }}</li>
-                </ul>
-              </div>
-
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Judul Permohonan / Proyek <span class="text-danger">*</span></label>
                 <input type="text" v-model="form.title" class="form-control" placeholder="Contoh: Dokumen Kelayakan Lingkungan Pembangunan Pabrik XYZ" required>
@@ -62,8 +56,9 @@
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   documentTypes: { type: Array, default: () => [] }
@@ -86,6 +81,20 @@ const handleFile = (e) => {
 };
 
 const submitProject = async (action) => {
+  const confirmed = await confirmAction({
+    title: action === 'draft' ? 'Simpan sebagai draft?' : 'Kirim permohonan?',
+    text: action === 'draft'
+      ? 'Data akan disimpan dan masih dapat diperbarui.'
+      : 'Permohonan akan masuk ke antrean penilaian.',
+    icon: action === 'draft' ? 'question' : 'warning',
+    confirmButtonText: action === 'draft' ? 'Ya, simpan' : 'Ya, kirim',
+    confirmButtonColor: action === 'draft' ? '#007bff' : '#28a745',
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
   const payload = new FormData();
   form.submit_action = action;
   payload.append('title', form.title);
@@ -94,8 +103,17 @@ const submitProject = async (action) => {
   payload.append('submit_action', form.submit_action);
   payload.append('document', form.document);
 
-  const response = await window.axios.post('/api/v1/projects', payload);
-  window.location.href = `/projects/${response.data.data.id}`;
+  try {
+    const response = await window.axios.post('/api/v1/projects', payload);
+    toast('success', action === 'draft' ? 'Draft berhasil disimpan.' : 'Permohonan berhasil dikirim.');
+    setTimeout(() => {
+      window.location.href = `/projects/${response.data.data.id}`;
+    }, 600);
+  } catch (error) {
+    apiErrorMessages(error, 'Permohonan gagal disimpan.')
+      .slice(0, 3)
+      .forEach((message) => toast('error', message));
+  }
 };
 
 const saveDraft = () => {
@@ -112,4 +130,14 @@ onMounted(async () => {
   const response = await window.axios.get('/api/v1/document-types');
   documentTypes.value = response.data.data || [];
 });
+
+watch(
+  errors,
+  (value) => {
+    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
+      toast('error', message);
+    });
+  },
+  { immediate: true }
+);
 </script>

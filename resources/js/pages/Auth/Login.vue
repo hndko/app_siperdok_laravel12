@@ -39,15 +39,6 @@
           <p>Gunakan akun yang telah terdaftar untuk melanjutkan proses dokumen.</p>
         </header>
 
-        <div v-if="flash.info" class="auth-alert auth-alert-info">
-          <i class="fas fa-info-circle" aria-hidden="true"></i>
-          <span>{{ flash.info }}</span>
-        </div>
-        <div v-if="flash.error || errors.email || apiError" class="auth-alert auth-alert-danger">
-          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-          <span>{{ apiError || flash.error || errors.email }}</span>
-        </div>
-
         <form class="login-form" @submit.prevent="submit">
           <label class="form-field">
             <span>Email <span class="required-mark" aria-hidden="true">*</span></span>
@@ -152,14 +143,14 @@
 
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { apiErrorMessage, toast } from '../../lib/feedback';
 
 const page = usePage();
 const flash = computed(() => page.props.flash || {});
 const errors = computed(() => page.props.errors || {});
 const showDemoAccounts = ref(false);
 const processing = ref(false);
-const apiError = ref('');
 
 const form = reactive({
   email: '',
@@ -175,7 +166,6 @@ const fillLogin = (email, pass) => {
 
 const submit = async () => {
   processing.value = true;
-  apiError.value = '';
 
   try {
     const response = await window.axios.post('/api/v1/login', {
@@ -185,15 +175,29 @@ const submit = async () => {
 
     localStorage.setItem('siperdok_token', response.data.access_token);
     window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
-    window.location.href = '/dashboard';
+    toast('success', 'Login berhasil. Mengarahkan ke dashboard.');
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 600);
   } catch (error) {
-    apiError.value = error.response?.data?.message
-      || error.response?.data?.errors?.email?.[0]
-      || 'Login gagal. Periksa kembali email dan password.';
+    toast('error', apiErrorMessage(error, 'Login gagal. Periksa kembali email dan password.'));
   } finally {
     processing.value = false;
   }
 };
+
+watch(
+  flash,
+  (value) => {
+    if (value.info) {
+      toast('info', value.info);
+    }
+    if (value.error || errors.value.email) {
+      toast('error', value.error || errors.value.email);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style src="../../../css/auth/login.css" scoped></style>

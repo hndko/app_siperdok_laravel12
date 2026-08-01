@@ -41,13 +41,6 @@
           <p>Masukkan data resmi agar proses verifikasi dokumen dapat ditelusuri dengan jelas.</p>
         </header>
 
-        <div v-if="Object.keys(displayErrors).length" class="auth-alert auth-alert-danger">
-          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-          <ul>
-            <li v-for="(err, key) in displayErrors" :key="key">{{ Array.isArray(err) ? err[0] : err }}</li>
-          </ul>
-        </div>
-
         <form class="register-form" @submit.prevent="submit">
           <label class="form-field form-field-wide">
             <span>Nama Lengkap Pemohon / Penanggung Jawab <span class="required-mark" aria-hidden="true">*</span></span>
@@ -163,12 +156,11 @@
 
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
+import { apiErrorMessages, toast } from '../../lib/feedback';
 
 const page = usePage();
 const errors = computed(() => page.props.errors || {});
-const apiErrors = ref({});
-const displayErrors = computed(() => Object.keys(apiErrors.value).length ? apiErrors.value : errors.value);
 const processing = ref(false);
 
 const form = reactive({
@@ -183,22 +175,34 @@ const form = reactive({
 
 const submit = async () => {
   processing.value = true;
-  apiErrors.value = {};
 
   try {
     const response = await window.axios.post('/api/v1/register', form);
 
     localStorage.setItem('siperdok_token', response.data.access_token);
     window.axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`;
-    window.location.href = '/dashboard';
+    toast('success', 'Registrasi berhasil. Mengarahkan ke dashboard.');
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 600);
   } catch (error) {
-    apiErrors.value = error.response?.data?.errors || {
-      register: error.response?.data?.message || 'Registrasi gagal. Periksa kembali data yang diisi.',
-    };
+    apiErrorMessages(error, 'Registrasi gagal. Periksa kembali data yang diisi.')
+      .slice(0, 3)
+      .forEach((message) => toast('error', message));
   } finally {
     processing.value = false;
   }
 };
+
+watch(
+  errors,
+  (value) => {
+    Object.values(value).flat().filter(Boolean).slice(0, 3).forEach((message) => {
+      toast('error', message);
+    });
+  },
+  { immediate: true }
+);
 </script>
 
 <style src="../../../css/auth/register.css" scoped></style>

@@ -49,7 +49,7 @@
                   </a>
                 </div>
               </div>
-              <div v-if="!project.documents || !project.documents.length" class="alert alert-secondary mb-0">Belum ada berkas dokumen.</div>
+              <div v-if="!project.documents || !project.documents.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada berkas dokumen.</div>
             </div>
           </div>
         </div>
@@ -169,6 +169,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
+import { apiErrorMessage, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, required: true },
@@ -190,18 +191,58 @@ const form = useForm({
 });
 
 const startReview = async () => {
-  await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
-    notes: startReviewForm.notes,
+  const confirmed = await confirmAction({
+    title: 'Mulai review dokumen?',
+    text: 'Permohonan akan dikunci ke penilai yang sedang memproses.',
+    icon: 'question',
+    confirmButtonText: 'Ya, mulai review',
+    confirmButtonColor: '#17a2b8',
   });
-  await loadProject();
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
+      notes: startReviewForm.notes,
+    });
+    await loadProject();
+    toast('success', 'Review dokumen berhasil dimulai.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Review dokumen gagal dimulai.'));
+  }
 };
 
 const submitDecision = async () => {
-  await window.axios.post(`/api/v1/assessments/${project.value.id}`, {
-    decision: form.decision,
-    notes: form.notes,
+  const decisionLabels = {
+    approved: 'menyetujui',
+    revision: 'meminta revisi',
+    rejected: 'menolak',
+  };
+  const confirmed = await confirmAction({
+    title: 'Simpan keputusan penilaian?',
+    text: `Anda akan ${decisionLabels[form.decision]} permohonan ini.`,
+    icon: form.decision === 'approved' ? 'success' : 'warning',
+    confirmButtonText: 'Ya, simpan keputusan',
+    confirmButtonColor: form.decision === 'rejected' ? '#dc3545' : '#28a745',
   });
-  await loadProject();
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await window.axios.post(`/api/v1/assessments/${project.value.id}`, {
+      decision: form.decision,
+      notes: form.notes,
+    });
+    await loadProject();
+    form.notes = '';
+    toast('success', 'Keputusan penilaian berhasil disimpan.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Keputusan penilaian gagal disimpan.'));
+  }
 };
 
 const formatDate = (dateStr) => {

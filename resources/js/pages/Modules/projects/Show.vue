@@ -50,7 +50,7 @@
                   </a>
                 </div>
               </div>
-              <div v-if="!project.documents || !project.documents.length" class="alert alert-secondary mb-0">Belum ada dokumen yang diunggah.</div>
+              <div v-if="!project.documents || !project.documents.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada dokumen yang diunggah.</div>
             </div>
 
             <div v-if="project.status === 'approved'" class="p-3 bg-success-soft border border-success rounded text-center mb-3" style="background-color: #f8fff9;">
@@ -115,6 +115,7 @@ import { computed, onMounted, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
+import { apiErrorMessage, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, required: true }
@@ -158,15 +159,20 @@ const getLogIcon = (action) => {
 };
 
 const downloadCertificate = async () => {
-  const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
-  link.click();
-  URL.revokeObjectURL(url);
+  try {
+    const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('success', 'Surat pengesahan berhasil diunduh.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Surat pengesahan gagal diunduh.'));
+  }
 };
 
 onMounted(async () => {

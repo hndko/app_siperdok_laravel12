@@ -174,19 +174,6 @@
 
       <section class="content">
         <div class="container-fluid">
-          <div v-if="flash.success" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-            <i class="fas fa-check-circle mr-2"></i> {{ flash.success }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div v-if="flash.error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-            <i class="fas fa-exclamation-circle mr-2"></i> {{ flash.error }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-
           <slot></slot>
         </div>
       </section>
@@ -202,8 +189,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
+import { apiErrorMessage, confirmAction, toast } from '../lib/feedback';
 
 const props = defineProps({
   pageTitle: { type: String, default: 'Dashboard' }
@@ -256,6 +244,17 @@ const loadCurrentUser = async () => {
 };
 
 const logout = async () => {
+  const confirmed = await confirmAction({
+    title: 'Keluar dari akun?',
+    text: 'Sesi Anda akan diakhiri dari perangkat ini.',
+    confirmButtonText: 'Ya, keluar',
+    confirmButtonColor: '#dc3545',
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
   try {
     await window.axios.post('/api/v1/logout');
   } finally {
@@ -266,15 +265,20 @@ const logout = async () => {
 };
 
 const downloadExport = async (type) => {
-  const response = await window.axios.get(`/api/v1/exports/projects/${type}`, {
-    responseType: 'blob',
-  });
-  const url = URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `siperdok-projects.${type}`;
-  link.click();
-  URL.revokeObjectURL(url);
+  try {
+    const response = await window.axios.get(`/api/v1/exports/projects/${type}`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `siperdok-projects.${type}`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('success', `Export ${type.toUpperCase()} berhasil diunduh.`);
+  } catch (error) {
+    toast('error', apiErrorMessage(error, `Export ${type.toUpperCase()} gagal diunduh.`));
+  }
 };
 
 onMounted(() => {
@@ -284,4 +288,17 @@ onMounted(() => {
     setTimeout(initAdminLTEWidgets, 100);
   });
 });
+
+watch(
+  flash,
+  (value) => {
+    if (value.success) {
+      toast('success', value.success);
+    }
+    if (value.error) {
+      toast('error', value.error);
+    }
+  },
+  { immediate: true }
+);
 </script>
