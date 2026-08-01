@@ -1,4 +1,4 @@
-@extends('layouts.adminlte')
+@extends('layouts.app-modules')
 
 @section('title', 'Penilaian Dokumen: ' . $project->project_number)
 

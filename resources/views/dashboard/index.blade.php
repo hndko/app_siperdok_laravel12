@@ -1,4 +1,4 @@
-@extends('layouts.adminlte')
+@extends('layouts.app-modules')
 
 @section('title', 'Dashboard Monitoring')
 
