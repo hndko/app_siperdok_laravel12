@@ -1,72 +1,133 @@
 <template>
-  <div class="login-page-wrapper">
-    <div class="login-box">
-      <div class="card card-outline card-primary auth-card">
-        <div class="card-header text-center py-4">
-          <a href="#" class="h2 text-dark font-weight-bold">
-            <i class="fas fa-file-contract text-primary mr-2"></i><b>SI PERDOK</b>
-          </a>
-          <p class="text-muted mb-0 small">Sistem Informasi Persetujuan Dokumen Kelayakan</p>
+  <main class="login-page-wrapper">
+    <section class="login-shell" aria-label="Masuk SI PERDOK">
+      <aside class="login-brand-panel">
+        <div class="brand-mark" aria-hidden="true">
+          <i class="fas fa-file-contract"></i>
         </div>
-        <div class="card-body login-card-body p-4">
-          <p class="login-box-msg font-weight-bold text-secondary">Masuk ke dalam Akun Anda (Vue 3 SPA)</p>
-
-          <div v-if="flash.info" class="alert alert-info py-2 small mb-3">{{ flash.info }}</div>
-          <div v-if="flash.error || errors.email" class="alert alert-danger py-2 small mb-3">
-            {{ flash.error || errors.email }}
-          </div>
-
-          <form @submit.prevent="submit">
-            <div class="input-group mb-3">
-              <input type="email" v-model="form.email" class="form-control" placeholder="Email" required autofocus>
-              <div class="input-group-append">
-                <div class="input-group-text"><span class="fas fa-envelope"></span></div>
-              </div>
-            </div>
-            <div class="input-group mb-3">
-              <input type="password" v-model="form.password" class="form-control" placeholder="Password" required>
-              <div class="input-group-append">
-                <div class="input-group-text"><span class="fas fa-lock"></span></div>
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-8">
-                <div class="icheck-primary">
-                  <input type="checkbox" id="remember" v-model="form.remember">
-                  <label for="remember" class="small text-muted">Ingat Saya</label>
-                </div>
-              </div>
-              <div class="col-4">
-                <button type="submit" :disabled="form.processing" class="btn btn-primary btn-block font-weight-bold">
-                  {{ form.processing ? 'Proses...' : 'Masuk' }}
-                </button>
-              </div>
-            </div>
-          </form>
-
-          <div class="border-top pt-3 mt-3">
-            <p class="small text-muted font-weight-bold mb-2"><i class="fas fa-key mr-1"></i> Quick Demo Login Credentials:</p>
-            <div class="btn-group-vertical w-100">
-              <button class="btn btn-outline-info btn-sm btn-role mb-1" @click="fillLogin('pemohon@example.com', 'password')">
-                <i class="fas fa-user-tie mr-2"></i> Pemohon: <code>pemohon@example.com</code>
-              </button>
-              <button class="btn btn-outline-success btn-sm btn-role mb-1" @click="fillLogin('penilai@example.com', 'password')">
-                <i class="fas fa-user-check mr-2"></i> Penilai: <code>penilai@example.com</code>
-              </button>
-              <button class="btn btn-outline-secondary btn-sm btn-role" @click="fillLogin('admin@example.com', 'password')">
-                <i class="fas fa-user-shield mr-2"></i> Admin: <code>admin@example.com</code>
-              </button>
-            </div>
-          </div>
-
-          <p class="mb-0 mt-3 text-center">
-            Belum punya akun? <Link href="/register" class="font-weight-bold">Daftar Akun Pemohon</Link>
+        <div>
+          <p class="brand-kicker">Sistem Informasi</p>
+          <h1>SI PERDOK</h1>
+          <p class="brand-description">
+            Kelola pengajuan, verifikasi, dan persetujuan dokumen kelayakan dalam satu alur kerja yang tertata.
           </p>
         </div>
-      </div>
-    </div>
-  </div>
+        <div class="brand-feature-list">
+          <div class="brand-feature">
+            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+            <span>Akses berbasis peran</span>
+          </div>
+          <div class="brand-feature">
+            <i class="fas fa-history" aria-hidden="true"></i>
+            <span>Riwayat proses terdokumentasi</span>
+          </div>
+          <div class="brand-feature">
+            <i class="fas fa-file-signature" aria-hidden="true"></i>
+            <span>Review dokumen terkontrol</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="login-form-panel">
+        <div class="mobile-brand">
+          <span class="mobile-brand-icon"><i class="fas fa-file-contract"></i></span>
+          <span>SI PERDOK</span>
+        </div>
+
+        <header class="form-header">
+          <h2>Masuk ke Akun</h2>
+          <p>Gunakan akun yang telah terdaftar untuk melanjutkan proses dokumen.</p>
+        </header>
+
+        <div v-if="flash.info" class="auth-alert auth-alert-info">
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+          <span>{{ flash.info }}</span>
+        </div>
+        <div v-if="flash.error || errors.email" class="auth-alert auth-alert-danger">
+          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+          <span>{{ flash.error || errors.email }}</span>
+        </div>
+
+        <form class="login-form" @submit.prevent="submit">
+          <label class="form-field">
+            <span>Email</span>
+            <div class="field-control">
+              <i class="fas fa-envelope" aria-hidden="true"></i>
+              <input
+                type="email"
+                v-model="form.email"
+                placeholder="nama@email.com"
+                autocomplete="email"
+                required
+                autofocus
+              >
+            </div>
+          </label>
+
+          <label class="form-field">
+            <span>Password</span>
+            <div class="field-control">
+              <i class="fas fa-lock" aria-hidden="true"></i>
+              <input
+                type="password"
+                v-model="form.password"
+                placeholder="Masukkan password"
+                autocomplete="current-password"
+                required
+              >
+            </div>
+          </label>
+
+          <div class="form-options">
+            <label class="remember-option" for="remember">
+              <input type="checkbox" id="remember" v-model="form.remember">
+              <span>Ingat saya</span>
+            </label>
+          </div>
+
+          <button type="submit" :disabled="form.processing" class="submit-button">
+            <i :class="form.processing ? 'fas fa-circle-notch fa-spin' : 'fas fa-arrow-right'" aria-hidden="true"></i>
+            <span>{{ form.processing ? 'Memproses...' : 'Masuk' }}</span>
+          </button>
+        </form>
+
+        <div class="demo-section">
+          <div class="demo-header">
+            <i class="fas fa-key" aria-hidden="true"></i>
+            <span>Akun demo</span>
+          </div>
+          <div class="demo-grid">
+            <button type="button" class="demo-button demo-pemohon" @click="fillLogin('pemohon@example.com', 'password')">
+              <span class="demo-icon"><i class="fas fa-user-tie" aria-hidden="true"></i></span>
+              <span>
+                <strong>Pemohon</strong>
+                <small>pemohon@example.com</small>
+              </span>
+            </button>
+            <button type="button" class="demo-button demo-penilai" @click="fillLogin('penilai@example.com', 'password')">
+              <span class="demo-icon"><i class="fas fa-user-check" aria-hidden="true"></i></span>
+              <span>
+                <strong>Penilai</strong>
+                <small>penilai@example.com</small>
+              </span>
+            </button>
+            <button type="button" class="demo-button demo-admin" @click="fillLogin('admin@example.com', 'password')">
+              <span class="demo-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+              <span>
+                <strong>Admin</strong>
+                <small>admin@example.com</small>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <p class="register-copy">
+          Belum punya akun?
+          <Link href="/register">Daftar akun pemohon</Link>
+        </p>
+      </section>
+    </section>
+  </main>
 </template>
 
 <script setup>
@@ -95,13 +156,425 @@ const submit = () => {
 
 <style scoped>
 .login-page-wrapper {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 32px 20px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(14, 165, 233, 0.14), transparent 30%),
+    linear-gradient(135deg, #f8fafc 0%, #eef5f9 50%, #e8eef5 100%);
+  color: #0f172a;
 }
-.login-box { width: 420px; }
-.auth-card { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-.btn-role { border-radius: 8px; font-weight: 600; text-align: left; }
+
+.login-shell {
+  width: min(100%, 980px);
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(360px, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.login-brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 44px;
+  background: linear-gradient(160deg, #0f172a 0%, #12344d 58%, #155e75 100%);
+  color: #ffffff;
+}
+
+.brand-mark {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #67e8f9;
+  font-size: 1.55rem;
+}
+
+.brand-kicker {
+  margin: 0 0 10px;
+  color: #bae6fd;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.login-brand-panel h1 {
+  margin: 0;
+  font-size: 2.55rem;
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.brand-description {
+  max-width: 34rem;
+  margin: 18px 0 0;
+  color: #dbeafe;
+  font-size: 1rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.brand-feature-list {
+  display: grid;
+  gap: 12px;
+}
+
+.brand-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #e0f2fe;
+  font-weight: 600;
+}
+
+.brand-feature i {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #a7f3d0;
+}
+
+.login-form-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mobile-brand-icon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #67e8f9;
+}
+
+.form-header {
+  margin-bottom: 26px;
+}
+
+.form-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.65rem;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.form-header p {
+  margin: 8px 0 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.auth-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.auth-alert-info {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.auth-alert-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.form-field > span,
+.demo-header {
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.field-control {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.field-control:focus-within {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
+}
+
+.field-control input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+}
+
+.field-control input::placeholder {
+  color: #64748b;
+}
+
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+}
+
+.remember-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: #475569;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remember-option input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0284c7;
+}
+
+.submit-button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #0369a1;
+  color: #ffffff;
+  font-weight: 800;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.submit-button:hover:not(:disabled),
+.submit-button:focus-visible:not(:disabled) {
+  background: #075985;
+}
+
+.submit-button:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.32);
+  outline-offset: 3px;
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.demo-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.demo-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.demo-button {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  text-align: left;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.demo-button:hover,
+.demo-button:focus-visible {
+  border-color: #94a3b8;
+  background: #eef6fb;
+}
+
+.demo-button:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.2);
+  outline-offset: 2px;
+}
+
+.demo-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+}
+
+.demo-pemohon .demo-icon {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.demo-penilai .demo-icon {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.demo-admin .demo-icon {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.demo-button strong,
+.demo-button small {
+  display: block;
+}
+
+.demo-button strong {
+  font-size: 0.92rem;
+}
+
+.demo-button small {
+  margin-top: 1px;
+  color: #475569;
+  font-size: 0.82rem;
+}
+
+.register-copy {
+  margin: 22px 0 0;
+  color: #475569;
+  text-align: center;
+  font-size: 0.94rem;
+}
+
+.register-copy a {
+  color: #0369a1;
+  font-weight: 800;
+}
+
+.register-copy a:hover,
+.register-copy a:focus-visible {
+  color: #075985;
+}
+
+@media (max-width: 820px) {
+  .login-page-wrapper {
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .login-shell {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .login-brand-panel {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: 32px 24px;
+  }
+
+  .mobile-brand {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-page-wrapper {
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .login-shell {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .login-form-panel {
+    padding: 28px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
 </style>
