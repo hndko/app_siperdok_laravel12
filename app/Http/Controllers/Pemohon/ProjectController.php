@@ -21,7 +21,8 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $query = Project::with(['documentType', 'evaluator'])
+        // Eager load applicant, documentType, and evaluator to prevent N+1 query overhead
+        $query = Project::with(['applicant', 'documentType', 'evaluator'])
             ->where('applicant_id', $user->id);
 
         if ($request->filled('search')) {
@@ -128,6 +129,7 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // Eager load all related nested models: documentType, applicant, evaluator, documents with uploader, assessmentLogs with user
         $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents.uploader', 'assessmentLogs.user'])
             ->findOrFail($id);
 
@@ -144,7 +146,8 @@ class ProjectController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $project = Project::with('documents')->findOrFail($id);
+        // Eager load documentType and documents with uploader
+        $project = Project::with(['documentType', 'documents.uploader', 'assessmentLogs.user'])->findOrFail($id);
 
         if ($project->applicant_id !== $user->id && !$user->hasRole('admin')) {
             abort(403, 'Akses ditolak.');

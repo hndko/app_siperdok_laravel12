@@ -54,7 +54,7 @@
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <span class="dropdown-item dropdown-header">Notifikasi Sistem</span>
                     <div class="dropdown-divider"></div>
-                    @forelse(Auth::user()->notifications()->latest()->limit(5)->get() as $notif)
+                    @forelse(Auth::user()->notifications()->with('project')->latest()->limit(5)->get() as $notif)
                         <a href="{{ $notif->project_id ? route('projects.show', $notif->project_id) : '#' }}" class="dropdown-item">
                             <i class="fas fa-info-circle mr-2 text-{{ $notif->type }}"></i> 
                             <span class="text-wrap small">{{ Str::limit($notif->title, 35) }}</span>

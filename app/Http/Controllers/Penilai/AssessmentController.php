@@ -19,6 +19,7 @@ class AssessmentController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // Eager load applicant, documentType, and evaluator to prevent N+1 queries
         $query = Project::with(['applicant', 'documentType', 'evaluator'])
             ->where('status', '!=', Project::STATUS_DRAFT);
 
@@ -50,6 +51,7 @@ class AssessmentController extends Controller
 
     public function review($id)
     {
+        // Eager load documentType, applicant, evaluator, documents with uploader, and assessmentLogs with user
         $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents.uploader', 'assessmentLogs.user'])
             ->findOrFail($id);
 
@@ -131,7 +133,8 @@ class AssessmentController extends Controller
 
     public function history(Request $request)
     {
-        $query = AssessmentLog::with(['project.documentType', 'project.applicant', 'user']);
+        // Eager load nested project relationships (documentType, applicant, evaluator) and user
+        $query = AssessmentLog::with(['project.documentType', 'project.applicant', 'project.evaluator', 'user']);
 
         if ($request->filled('search')) {
             $search = $request->search;

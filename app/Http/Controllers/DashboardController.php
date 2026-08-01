@@ -25,8 +25,8 @@ class DashboardController extends Controller
             $pendingCount = Project::whereIn('status', ['submitted', 'in_review'])->count();
             $draftCount = Project::where('status', 'draft')->count();
 
-            // Recent project activities
-            $recentProjects = Project::with(['applicant', 'documentType'])
+            // Eager load applicant, evaluator, and documentType to prevent N+1 query issues
+            $recentProjects = Project::with(['applicant', 'evaluator', 'documentType'])
                 ->orderBy('updated_at', 'desc')
                 ->limit(10)
                 ->get();
@@ -39,7 +39,8 @@ class DashboardController extends Controller
             $pendingCount = Project::where('applicant_id', $user->id)->whereIn('status', ['submitted', 'in_review'])->count();
             $draftCount = Project::where('applicant_id', $user->id)->where('status', 'draft')->count();
 
-            $recentProjects = Project::with(['documentType'])
+            // Eager load applicant, evaluator, and documentType for Pemohon view
+            $recentProjects = Project::with(['applicant', 'evaluator', 'documentType'])
                 ->where('applicant_id', $user->id)
                 ->orderBy('updated_at', 'desc')
                 ->limit(10)

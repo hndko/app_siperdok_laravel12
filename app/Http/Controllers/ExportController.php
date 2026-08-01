@@ -11,6 +11,7 @@ class ExportController extends Controller
 {
     public function exportProjectsCsv(Request $request)
     {
+        // Eager load applicant, evaluator, and documentType for fast CSV streaming
         $query = Project::with(['applicant', 'evaluator', 'documentType']);
 
         if ($request->filled('status')) {
@@ -31,7 +32,7 @@ class ExportController extends Controller
                     $prj->project_number,
                     $prj->title,
                     $prj->documentType->name ?? '-',
-                    $prj->applicant->name . ' (' . ($prj->applicant->company_name ?? '-') . ')',
+                    ($prj->applicant->name ?? '-') . ' (' . ($prj->applicant->company_name ?? '-') . ')',
                     $prj->evaluator->name ?? 'Belum Ditugaskan',
                     strtoupper($prj->status),
                     $prj->submitted_at ? $prj->submitted_at->format('Y-m-d H:i') : '-',
@@ -49,7 +50,8 @@ class ExportController extends Controller
 
     public function exportCertificatePdf($id)
     {
-        $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents'])->findOrFail($id);
+        // Eager load applicant, evaluator, documentType, and documents with uploader for PDF generation
+        $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents.uploader'])->findOrFail($id);
 
         if ($project->status !== Project::STATUS_APPROVED) {
             return back()->with('error', 'Dokumen pengesahan hanya dapat diterbitkan untuk permohonan yang telah DISETUJU.');
