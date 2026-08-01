@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\DocumentType;
 use App\Models\Project;
+use App\Models\ProjectVerificationChecklist;
 use App\Models\User;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
+use Database\Seeders\VerificationChecklistItemSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +23,7 @@ class ProjectWorkflowTest extends TestCase
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
         $this->seed(DocumentTypeSeeder::class);
+        $this->seed(VerificationChecklistItemSeeder::class);
     }
 
     public function test_full_document_approval_business_workflow()
@@ -64,10 +67,13 @@ class ProjectWorkflowTest extends TestCase
         $project->refresh();
         $this->assertEquals(Project::STATUS_IN_REVIEW, $project->status);
 
+        $this->saveChecklist($penilai, $project, ProjectVerificationChecklist::STATUS_FAILED);
+
         $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}", [
             'decision' => 'revision',
             'notes' => 'Tolong lengkapi peta lokasi kegiatan.',
         ]);
+        $response->assertOk();
 
         $project->refresh();
         $this->assertEquals(Project::STATUS_REVISION, $project->status);
@@ -88,14 +94,33 @@ class ProjectWorkflowTest extends TestCase
 
         // 4. Penilai starts review again and approves the project
         $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}/start-review");
+        $this->saveChecklist($penilai, $project->fresh(), ProjectVerificationChecklist::STATUS_PASSED);
 
         $response = $this->actingAs($penilai, 'sanctum')->postJson("/api/v1/assessments/{$project->id}", [
             'decision' => 'approved',
             'notes' => 'Dokumen lengkap dan memenuhi syarat.',
         ]);
+        $response->assertOk();
 
         $project->refresh();
         $this->assertEquals(Project::STATUS_APPROVED, $project->status);
         $this->assertNotNull($project->approved_at);
+    }
+
+    private function saveChecklist(User $penilai, Project $project, string $requiredStatus): void
+    {
+        $items = $this->actingAs($penilai, 'sanctum')
+            ->getJson("/api/v1/projects/{$project->id}/verification-checklists")
+            ->json('data.items');
+
+        $payload = collect($items)->map(fn (array $item) => [
+            'checklist_item_id' => $item['checklist_item_id'],
+            'status' => $item['item']['is_required'] ? $requiredStatus : ProjectVerificationChecklist::STATUS_NOT_APPLICABLE,
+            'notes' => $item['item']['is_required'] ? 'Sudah diverifikasi.' : 'Tidak wajib.',
+        ])->all();
+
+        $this->actingAs($penilai, 'sanctum')
+            ->putJson("/api/v1/projects/{$project->id}/verification-checklists", ['items' => $payload])
+            ->assertOk();
     }
 }

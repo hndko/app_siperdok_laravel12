@@ -32,7 +32,7 @@ class ProjectPolicy
 
     public function assess(User $user, Project $project): bool
     {
-        if (!$user->hasRole('admin') && !$user->hasRole('penilai')) {
+        if (! $user->hasRole('admin') && ! $user->hasRole('penilai')) {
             return false;
         }
 
@@ -55,5 +55,11 @@ class ProjectPolicy
     public function export(User $user): bool
     {
         return $user->hasRole('admin') || $user->hasRole('penilai');
+    }
+
+    public function issueCertificate(User $user, Project $project): bool
+    {
+        return ($user->hasRole('admin') || $user->hasRole('penilai'))
+            && $project->status === Project::STATUS_APPROVED;
     }
 }

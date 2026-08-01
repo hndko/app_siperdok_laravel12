@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleAndPermissionSeeder::class,
             DocumentTypeSeeder::class,
+            VerificationChecklistItemSeeder::class,
             UserSeeder::class,
             ProjectSeeder::class,
         ]);

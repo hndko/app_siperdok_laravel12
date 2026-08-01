@@ -53,16 +53,24 @@
               <div v-if="!project.documents || !project.documents.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada dokumen yang diunggah.</div>
             </div>
 
-            <div v-if="project.status === 'approved'" class="p-3 bg-success-soft border border-success rounded text-center mb-3" style="background-color: #f8fff9;">
+            <div v-if="project.status === 'approved' || project.status === 'certificate_issued'" class="p-3 bg-success-soft border border-success rounded text-center mb-3" style="background-color: #f8fff9;">
               <i class="fas fa-award text-success fa-3x mb-2"></i>
-              <h5 class="font-weight-bold text-success">DOKUMEN TELAH DISETUJUI & DITERBITKAN</h5>
-              <p class="small text-muted mb-3">Dokumen kelayakan ini telah memenuhi seluruh kriteria dan disahkan oleh Penilai.</p>
+              <h5 class="font-weight-bold text-success">
+                {{ project.status === 'certificate_issued' ? 'CERTIFICATE TELAH DITERBITKAN' : 'DOKUMEN TELAH DISETUJUI' }}
+              </h5>
+              <p class="small text-muted mb-3">
+                {{ project.status === 'certificate_issued' ? `Nomor certificate: ${project.certificate_number}` : 'Dokumen sudah disetujui dan menunggu penerbitan certificate resmi.' }}
+              </p>
               <div class="d-flex justify-content-center gap-2">
                 <Link :href="`/exports/projects/${project.id}/certificate/preview`" class="btn btn-outline-success font-weight-bold mr-2">
                   <i class="fas fa-eye mr-1"></i> Pratinjau Surat (Vue 3)
                 </Link>
-                <button type="button" class="btn btn-success font-weight-bold" @click="downloadCertificate">
+                <button v-if="project.status === 'certificate_issued'" type="button" class="btn btn-success font-weight-bold" @click="downloadCertificate">
                   <i class="fas fa-file-pdf mr-1"></i> Unduh Surat Pengesahan Dokumen (PDF)
+                </button>
+                <button v-if="project.status === 'approved' && (userRole === 'penilai' || userRole === 'admin')" type="button" class="btn btn-primary font-weight-bold" :disabled="issuingCertificate" @click="issueCertificate">
+                  <i :class="issuingCertificate ? 'fas fa-circle-notch fa-spin mr-1' : 'fas fa-certificate mr-1'"></i>
+                  {{ issuingCertificate ? 'Menerbitkan...' : 'Terbitkan Certificate' }}
                 </button>
               </div>
             </div>
@@ -115,7 +123,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
-import { apiErrorMessage, toast } from '../../../lib/feedback';
+import { apiErrorMessage, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, default: () => ({}) }
@@ -124,6 +132,7 @@ const props = defineProps({
 const project = ref(props.project);
 const currentUser = ref(null);
 const currentRole = ref('pemohon');
+const issuingCertificate = ref(false);
 const route = useRoute();
 const user = computed(() => currentUser.value);
 const userRole = computed(() => currentRole.value);
@@ -153,9 +162,33 @@ const getLogIcon = (action) => {
     case 'start_review': return 'fas fa-search bg-warning';
     case 'request_revision': return 'fas fa-exclamation-triangle bg-orange';
     case 'approve': return 'fas fa-check bg-success';
+    case 'issue_certificate': return 'fas fa-certificate bg-success';
     case 'reject': return 'fas fa-times bg-danger';
     case 'resubmit': return 'fas fa-redo bg-primary';
     default: return 'fas fa-info bg-secondary';
+  }
+};
+
+const issueCertificate = async () => {
+  const confirmed = await confirmAction({
+    title: 'Terbitkan certificate resmi?',
+    text: 'Status permohonan akan berubah menjadi certificate terbit dan PDF resmi dapat diunduh.',
+    icon: 'question',
+    confirmButtonText: 'Ya, terbitkan',
+    confirmButtonColor: '#007bff',
+  });
+
+  if (!confirmed) return;
+
+  issuingCertificate.value = true;
+  try {
+    await window.axios.post(`/api/v1/projects/${project.value.id}/issue-certificate`);
+    await loadProject();
+    toast('success', 'Certificate berhasil diterbitkan.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Certificate gagal diterbitkan.'));
+  } finally {
+    issuingCertificate.value = false;
   }
 };
 

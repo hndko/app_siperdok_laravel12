@@ -68,9 +68,11 @@ Pemohon mengunggah dokumen dan mengirim permohonan
         ↓
 Penilai meninjau dokumen
         ↓
+Penilai mengisi checklist verifikasi administrasi
+        ↓
 Keputusan: disetujui, perlu revisi, atau ditolak
         ↓
-Jika disetujui, sistem dapat menerbitkan surat pengesahan PDF
+Jika disetujui, penilai/admin menerbitkan certificate dan PDF resmi
 ```
 
 ---
@@ -127,8 +129,11 @@ Tabel inti aplikasi:
 | `document_types` | Master jenis dokumen seperti AMDAL, UKL-UPL, SPPL, PERTEK Air Limbah, dan PERTEK Emisi. |
 | `projects` | Data permohonan dokumen kelayakan, pemohon, penilai, jenis dokumen, status, dan tanggal keputusan. |
 | `project_documents` | Metadata dokumen yang diunggah, termasuk path file, ukuran, MIME type, dan versi dokumen. |
+| `verification_checklist_items` | Master checklist verifikasi administrasi yang wajib/opsional untuk proses penilaian. |
+| `project_verification_checklists` | Hasil checklist setiap permohonan, status item, catatan penilai, reviewer, dan waktu pengecekan. |
 | `assessment_logs` | Audit trail perubahan status dan catatan evaluasi. |
-| `notifications` | Notifikasi status permohonan untuk pemohon. |
+| `notifications` | Notifikasi status permohonan untuk pemohon, termasuk status sudah dibaca dan waktu baca. |
+| `certificate_counters` | Counter nomor certificate per tahun dan bulan agar nomor terbit berurutan. |
 | `personal_access_tokens` | Token API Laravel Sanctum. |
 | `roles`, `permissions`, `model_has_roles`, `role_has_permissions`, `model_has_permissions` | Struktur role dan permission dari Spatie Laravel Permission. |
 | `sessions`, `cache`, `jobs` | Tabel pendukung Laravel untuk session, cache, queue, dan batch job. |
@@ -138,7 +143,11 @@ Relasi utama:
 - `users.id` → `projects.applicant_id`
 - `users.id` → `projects.evaluator_id`
 - `document_types.id` → `projects.document_type_id`
+- `users.id` → `projects.certificate_issued_by`
 - `projects.id` → `project_documents.project_id`
+- `projects.id` → `project_verification_checklists.project_id`
+- `verification_checklist_items.id` → `project_verification_checklists.checklist_item_id`
+- `users.id` → `project_verification_checklists.reviewer_id`
 - `projects.id` → `assessment_logs.project_id`
 - `projects.id` → `notifications.project_id`
 - `users.id` → `project_documents.uploaded_by`
@@ -153,13 +162,15 @@ Status permohonan:
 | `submitted` | Permohonan sudah dikirim untuk dinilai. |
 | `in_review` | Permohonan berada dalam proses penilaian. |
 | `revision` | Penilai meminta pemohon memperbaiki dokumen. |
-| `approved` | Permohonan disetujui dan dapat diterbitkan sebagai PDF. |
+| `approved` | Permohonan disetujui dan siap diterbitkan menjadi certificate. |
+| `certificate_issued` | Certificate sudah disahkan, memiliki nomor terbit, dan PDF resmi dapat diunduh. |
 | `rejected` | Permohonan ditolak. |
 
 Seeder bawaan membuat:
 
 - 3 akun demo utama: admin, pemohon, dan penilai.
 - 5 jenis dokumen lingkungan.
+- Master checklist verifikasi administrasi.
 - 1.000 akun pemohon dan 1.000 akun penilai untuk data simulasi.
 - 10.000 data permohonan dengan distribusi status berbeda.
 
@@ -170,8 +181,8 @@ Seeder bawaan membuat:
 | Role | Hak Akses |
 | --- | --- |
 | 🛡️ **Admin** | Mengakses dashboard global, melihat seluruh permohonan, mengelola master pengguna, mengelola master jenis dokumen, menilai permohonan, melihat histori, dan melakukan ekspor laporan. |
-| 🧑‍💼 **Pemohon** | Membuat draft, mengunggah dokumen, mengirim permohonan, mengedit draft atau revisi, melihat status, melihat histori permohonan sendiri, dan mengunduh surat pengesahan untuk permohonan yang disetujui. |
-| 👨‍⚖️ **Penilai** | Melihat daftar permohonan selain draft, membuka halaman review, memberi keputusan disetujui/revisi/ditolak, menulis catatan evaluasi, melihat histori penilaian, dan ekspor laporan. |
+| 🧑‍💼 **Pemohon** | Membuat draft, mengunggah dokumen, mengirim permohonan, mengedit draft atau revisi, melihat status, melihat histori permohonan sendiri, menerima notifikasi, dan mengunduh PDF resmi setelah certificate diterbitkan. |
+| 👨‍⚖️ **Penilai** | Melihat daftar permohonan selain draft, membuka halaman review, mengisi checklist verifikasi administrasi, memberi keputusan disetujui/revisi/ditolak, menerbitkan certificate setelah approved, melihat histori penilaian, dan ekspor laporan. |
 
 Permission yang didefinisikan:
 
@@ -202,8 +213,12 @@ export-reports
 - ⬆️ Upload dokumen `pdf`, `doc`, `docx`, `png`, `jpg`, dan `jpeg` maksimal 10 MB.
 - 🧬 Versioning dokumen ketika pemohon mengunggah revisi.
 - ⚖️ Review dan keputusan penilaian oleh role `penilai` atau `admin`.
+- ✅ Checklist verifikasi administrasi sebelum keputusan final.
+- 🏷️ Penerbitan certificate setelah permohonan berstatus `approved`.
+- 📄 PDF certificate resmi hanya tersedia setelah status `certificate_issued`.
+- 🔎 Verifikasi publik nomor certificate dengan endpoint throttled.
 - 📝 Audit trail untuk setiap perubahan status permohonan.
-- 🔔 Notifikasi otomatis setelah permohonan disetujui, diminta revisi, atau ditolak.
+- 🔔 Notifikasi otomatis setelah permohonan diproses, dengan fitur tandai dibaca dan tandai semua dibaca.
 - 📊 Dashboard KPI dan grafik tren permohonan.
 - 🧑‍💻 Master data pengguna untuk admin.
 - 📚 Master jenis dokumen untuk admin.
@@ -372,8 +387,9 @@ Contoh alur penilai:
 2. Buka menu penilaian.
 3. Pilih permohonan yang masuk.
 4. Buka halaman review.
-5. Berikan keputusan `approved`, `revision`, atau `rejected`.
-6. Isi catatan evaluasi.
+5. Isi checklist verifikasi administrasi.
+6. Berikan keputusan `approved`, `revision`, atau `rejected`.
+7. Jika status sudah `approved`, terbitkan certificate.
 
 Build aset production:
 
@@ -501,6 +517,27 @@ curl -X POST http://127.0.0.1:8000/api/v1/assessments/1/start-review \
   -d '{"notes":"Review administrasi dimulai."}'
 ```
 
+Ambil checklist verifikasi administrasi:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/projects/1/verification-checklists \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>"
+```
+
+Simpan checklist verifikasi administrasi:
+
+```bash
+curl -X PUT http://127.0.0.1:8000/api/v1/projects/1/verification-checklists \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items":[
+      {"checklist_item_id":1,"status":"passed","notes":"Dokumen lengkap."},
+      {"checklist_item_id":2,"status":"passed","notes":"Jenis dokumen sesuai."}
+    ]
+  }'
+```
+
 Proses penilaian:
 
 ```bash
@@ -508,6 +545,13 @@ curl -X POST http://127.0.0.1:8000/api/v1/assessments/1 \
   -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>" \
   -H "Content-Type: application/json" \
   -d '{"decision":"approved","notes":"Dokumen lengkap dan memenuhi syarat."}'
+```
+
+Terbitkan certificate setelah permohonan disetujui:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/projects/1/issue-certificate \
+  -H "Authorization: Bearer <TOKEN_ADMIN_ATAU_PENILAI>"
 ```
 
 Ambil histori penilaian:
@@ -531,6 +575,19 @@ curl -X GET http://127.0.0.1:8000/api/v1/users \
   -H "Authorization: Bearer <TOKEN_ADMIN>"
 ```
 
+Ambil notifikasi dan tandai sudah dibaca:
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/notifications \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
+
+curl -X PATCH http://127.0.0.1:8000/api/v1/notifications/1/read \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
+
+curl -X PATCH http://127.0.0.1:8000/api/v1/notifications/read-all \
+  -H "Authorization: Bearer <TOKEN_ANDA>"
+```
+
 Export laporan:
 
 ```bash
@@ -543,12 +600,18 @@ curl -X GET http://127.0.0.1:8000/api/v1/exports/projects/xlsx \
   -o laporan.xlsx
 ```
 
-Download PDF surat pengesahan:
+Download PDF certificate resmi:
 
 ```bash
 curl -X GET http://127.0.0.1:8000/api/v1/exports/projects/1/certificate \
   -H "Authorization: Bearer <TOKEN_ANDA>" \
   -o surat-pengesahan.pdf
+```
+
+Verifikasi publik nomor certificate:
+
+```bash
+curl -X GET "http://127.0.0.1:8000/api/v1/certificates/verify/CERT/2026/08/000001"
 ```
 
 Logout API:
@@ -573,7 +636,10 @@ Test yang tersedia mencakup:
 - Render halaman login.
 - Login dan register API Sanctum.
 - Proteksi akses REST API berdasarkan role.
-- Alur pembuatan permohonan, revisi, submit ulang, dan approval melalui API.
+- Alur pembuatan permohonan, checklist administrasi, revisi, submit ulang, approval, dan penerbitan certificate melalui API.
+- Validasi approval wajib menunggu checklist administrasi selesai.
+- Validasi PDF certificate hanya tersedia setelah certificate diterbitkan.
+- Endpoint notifikasi untuk tandai dibaca.
 - Validasi route controller invokable.
 - Export Excel.
 

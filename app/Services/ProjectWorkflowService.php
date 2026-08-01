@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Jobs\CreateProjectStatusNotification;
 use App\Models\AssessmentLog;
+use App\Models\CertificateCounter;
 use App\Models\Project;
+use App\Models\ProjectVerificationChecklist;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -32,7 +34,7 @@ class ProjectWorkflowService
         return DB::transaction(function () use ($projectId, $actor, $notes) {
             $project = Project::query()->lockForUpdate()->findOrFail($projectId);
 
-            if (!($actor->hasRole('admin') || $actor->hasRole('penilai'))) {
+            if (! ($actor->hasRole('admin') || $actor->hasRole('penilai'))) {
                 abort(403, 'Anda tidak berhak memulai review permohonan ini.');
             }
 
@@ -68,7 +70,7 @@ class ProjectWorkflowService
         return DB::transaction(function () use ($projectId, $actor, $decision, $notes) {
             $project = Project::query()->lockForUpdate()->findOrFail($projectId);
 
-            if (!($actor->hasRole('admin') || $actor->hasRole('penilai'))) {
+            if (! ($actor->hasRole('admin') || $actor->hasRole('penilai'))) {
                 abort(403, 'Anda tidak berhak menilai permohonan ini.');
             }
 
@@ -78,15 +80,17 @@ class ProjectWorkflowService
                 ]);
             }
 
-            if (!$actor->hasRole('admin') && $project->evaluator_id !== $actor->id) {
+            if (! $actor->hasRole('admin') && $project->evaluator_id !== $actor->id) {
                 abort(403, 'Permohonan ini sedang ditangani penilai lain.');
             }
 
-            if (!in_array($decision, [Project::STATUS_APPROVED, Project::STATUS_REVISION, Project::STATUS_REJECTED], true)) {
+            if (! in_array($decision, [Project::STATUS_APPROVED, Project::STATUS_REVISION, Project::STATUS_REJECTED], true)) {
                 throw ValidationException::withMessages([
                     'decision' => 'Keputusan penilaian tidak valid.',
                 ]);
             }
+
+            $this->validateRequiredChecklistsForDecision($project, $decision);
 
             $previousStatus = $project->status;
             $now = now();
@@ -130,6 +134,72 @@ class ProjectWorkflowService
         });
     }
 
+    public function issueCertificate(int $projectId, User $actor): Project
+    {
+        return DB::transaction(function () use ($projectId, $actor) {
+            $project = Project::query()->lockForUpdate()->findOrFail($projectId);
+
+            if (! ($actor->hasRole('admin') || $actor->hasRole('penilai'))) {
+                abort(403, 'Anda tidak berhak menerbitkan certificate.');
+            }
+
+            if ($project->status === Project::STATUS_CERTIFICATE_ISSUED) {
+                return $project->refresh();
+            }
+
+            if ($project->status !== Project::STATUS_APPROVED) {
+                throw ValidationException::withMessages([
+                    'status' => 'Certificate hanya dapat diterbitkan dari status approved.',
+                ]);
+            }
+
+            if ($project->certificate_number || $project->certificate_issued_at) {
+                throw ValidationException::withMessages([
+                    'certificate' => 'Certificate sudah pernah diterbitkan.',
+                ]);
+            }
+
+            $this->validateRequiredChecklistsForDecision($project, Project::STATUS_APPROVED);
+
+            if (! $project->project_number || ! $project->title || ! $project->applicant_id || ! $project->approved_at) {
+                throw ValidationException::withMessages([
+                    'certificate' => 'Data permohonan belum lengkap untuk penerbitan certificate.',
+                ]);
+            }
+
+            $issuedAt = now();
+            $certificateNumber = $this->nextCertificateNumber($issuedAt);
+            $previousStatus = $project->status;
+
+            $project->update([
+                'status' => Project::STATUS_CERTIFICATE_ISSUED,
+                'certificate_number' => $certificateNumber,
+                'certificate_issued_at' => $issuedAt,
+                'certificate_issued_by' => $actor->id,
+            ]);
+
+            AssessmentLog::create([
+                'project_id' => $project->id,
+                'user_id' => $actor->id,
+                'action' => 'issue_certificate',
+                'previous_status' => $previousStatus,
+                'new_status' => Project::STATUS_CERTIFICATE_ISSUED,
+                'notes' => 'Certificate diterbitkan dengan nomor '.$certificateNumber.'.',
+            ]);
+
+            $this->queueNotification(
+                $project,
+                $actor,
+                'certificate_issued',
+                'Dokumen Pengajuan Telah Diterbitkan',
+                'Dokumen pengajuan '.$project->title.' telah disahkan dan diterbitkan dengan nomor '.$certificateNumber.'.',
+                'success',
+            );
+
+            return $project->refresh();
+        });
+    }
+
     private function decisionNotification(Project $project, string $decision, string $notes): array
     {
         return match ($decision) {
@@ -162,5 +232,57 @@ class ProjectWorkflowService
             message: $message,
             type: $type,
         )->afterCommit();
+    }
+
+    private function validateRequiredChecklistsForDecision(Project $project, string $decision): void
+    {
+        $required = ProjectVerificationChecklist::query()
+            ->where('project_id', $project->id)
+            ->whereHas('item', fn ($query) => $query->where('is_required', true)->where('is_active', true));
+
+        $requiredTotal = (clone $required)->count();
+        $pendingCount = (clone $required)->where('status', ProjectVerificationChecklist::STATUS_PENDING)->count();
+        $failedCount = (clone $required)->where('status', ProjectVerificationChecklist::STATUS_FAILED)->count();
+
+        if ($requiredTotal === 0 || $pendingCount > 0) {
+            throw ValidationException::withMessages([
+                'checklists' => 'Seluruh checklist wajib harus selesai sebelum keputusan diberikan.',
+            ]);
+        }
+
+        if ($decision === Project::STATUS_APPROVED && $failedCount > 0) {
+            throw ValidationException::withMessages([
+                'checklists' => 'Permohonan tidak dapat disetujui karena masih ada checklist wajib yang gagal.',
+            ]);
+        }
+    }
+
+    private function nextCertificateNumber(\DateTimeInterface $issuedAt): string
+    {
+        $year = (int) $issuedAt->format('Y');
+        $month = (int) $issuedAt->format('m');
+
+        CertificateCounter::upsert(
+            [[
+                'year' => $year,
+                'month' => $month,
+                'next_number' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]],
+            ['year', 'month'],
+            ['updated_at'],
+        );
+
+        $counter = CertificateCounter::query()
+            ->where('year', $year)
+            ->where('month', $month)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $number = $counter->next_number;
+        $counter->increment('next_number');
+
+        return sprintf('CERT/%d/%02d/%06d', $year, $month, $number);
     }
 }

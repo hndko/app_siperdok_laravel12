@@ -18,7 +18,7 @@ class ExportProjectsXlsxApiController extends Controller
         $this->authorize('export', Project::class);
 
         $filters = $request->validate([
-            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,revision,approved,rejected'],
+            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,revision,approved,rejected,certificate_issued'],
             'search' => ['nullable', 'string', 'max:100'],
             'document_type_id' => ['nullable', 'integer', 'exists:document_types,id'],
             'applicant_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -29,7 +29,7 @@ class ExportProjectsXlsxApiController extends Controller
 
         return Excel::download(
             new ProjectsExport($user, $filters),
-            'Laporan_Permohonan_Dokumen_' . date('Ymd_His') . '.xlsx',
+            'Laporan_Permohonan_Dokumen_'.date('Ymd_His').'.xlsx',
         );
     }
 }

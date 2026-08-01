@@ -35,7 +35,7 @@ class ExportProjectsCsvApiController extends Controller
                         $project->project_number,
                         $project->title,
                         $project->documentType->name ?? '-',
-                        ($project->applicant->name ?? '-') . ' (' . ($project->applicant->company_name ?? '-') . ')',
+                        ($project->applicant->name ?? '-').' ('.($project->applicant->company_name ?? '-').')',
                         $project->evaluator->name ?? 'Belum Ditugaskan',
                         strtoupper($project->status),
                         $project->submitted_at ? $project->submitted_at->format('Y-m-d H:i') : '-',
@@ -49,14 +49,14 @@ class ExportProjectsCsvApiController extends Controller
 
         return Response::stream($callback, 200, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="Laporan_Permohonan_Dokumen_' . date('Ymd_His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="Laporan_Permohonan_Dokumen_'.date('Ymd_His').'.csv"',
         ]);
     }
 
     private function filterRules(): array
     {
         return [
-            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,revision,approved,rejected'],
+            'status' => ['nullable', 'string', 'in:draft,submitted,in_review,revision,approved,rejected,certificate_issued'],
             'search' => ['nullable', 'string', 'max:100'],
             'document_type_id' => ['nullable', 'integer', 'exists:document_types,id'],
             'applicant_id' => ['nullable', 'integer', 'exists:users,id'],

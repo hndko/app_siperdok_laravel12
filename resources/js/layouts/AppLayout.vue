@@ -20,17 +20,32 @@
             <span v-if="unreadNotificationsCount > 0" class="badge badge-warning navbar-badge position-absolute" style="top: 2px; right: 2px;">{{ unreadNotificationsCount }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow">
-            <span class="dropdown-item dropdown-header font-weight-bold">Notifikasi Sistem</span>
+            <div class="dropdown-item dropdown-header d-flex justify-content-between align-items-center">
+              <span class="font-weight-bold">Notifikasi Sistem</span>
+              <button type="button" class="btn btn-link btn-xs p-0" :disabled="markingAllRead || unreadNotificationsCount === 0" @click.stop="markAllNotificationsRead">
+                Tandai semua dibaca
+              </button>
+            </div>
             <div class="dropdown-divider"></div>
-            <Link 
+            <div
               v-for="notif in notifications" 
               :key="notif.id" 
-              :href="notif.project_id ? `/projects/${notif.project_id}` : '#'" 
-              class="dropdown-item py-2"
+              :class="['dropdown-item py-2', !notif.is_read ? 'bg-light font-weight-bold' : '']"
             >
               <i :class="['fas fa-info-circle mr-2', `text-${notif.type}`]"></i> 
-              <span class="text-wrap small">{{ notif.title }}</span>
-            </Link>
+              <Link :href="notif.project_id ? `/projects/${notif.project_id}` : '#'" class="text-reset">
+                <span class="text-wrap small">{{ notif.title }}</span>
+              </Link>
+              <button
+                v-if="!notif.is_read"
+                type="button"
+                class="btn btn-link btn-xs float-right p-0"
+                :disabled="markingNotificationId === notif.id"
+                @click.stop="markNotificationRead(notif)"
+              >
+                Dibaca
+              </button>
+            </div>
             <div v-if="!notifications || !notifications.length" class="dropdown-item text-muted text-center py-2">Tidak ada notifikasi baru</div>
           </div>
         </li>
@@ -208,6 +223,8 @@ const apiUser = ref(null);
 const apiRole = ref(null);
 const apiNotifications = ref([]);
 const apiUnreadNotificationsCount = ref(0);
+const markingNotificationId = ref(null);
+const markingAllRead = ref(false);
 const user = computed(() => apiUser.value);
 const userRole = computed(() => apiRole.value || 'pemohon');
 const notifications = computed(() => apiNotifications.value);
@@ -245,6 +262,50 @@ const loadCurrentUser = async () => {
   } catch {
     localStorage.removeItem('siperdok_token');
     router.push('/login');
+  }
+};
+
+const loadNotifications = async () => {
+  const response = await window.axios.get('/api/v1/notifications');
+  const data = response.data.data;
+  apiNotifications.value = data.notifications.data || data.notifications || [];
+  apiUnreadNotificationsCount.value = data.unread_count || 0;
+};
+
+const markNotificationRead = async (notification) => {
+  markingNotificationId.value = notification.id;
+  const previous = { notifications: [...apiNotifications.value], count: apiUnreadNotificationsCount.value };
+
+  notification.is_read = true;
+  apiUnreadNotificationsCount.value = Math.max(0, apiUnreadNotificationsCount.value - 1);
+
+  try {
+    const response = await window.axios.patch(`/api/v1/notifications/${notification.id}/read`);
+    apiUnreadNotificationsCount.value = response.data.data.unread_count;
+  } catch (error) {
+    apiNotifications.value = previous.notifications;
+    apiUnreadNotificationsCount.value = previous.count;
+    toast('error', apiErrorMessage(error, 'Notifikasi gagal ditandai dibaca.'));
+  } finally {
+    markingNotificationId.value = null;
+  }
+};
+
+const markAllNotificationsRead = async () => {
+  markingAllRead.value = true;
+  const previous = { notifications: [...apiNotifications.value], count: apiUnreadNotificationsCount.value };
+
+  apiNotifications.value = apiNotifications.value.map((notification) => ({ ...notification, is_read: true }));
+  apiUnreadNotificationsCount.value = 0;
+
+  try {
+    await window.axios.patch('/api/v1/notifications/read-all');
+  } catch (error) {
+    apiNotifications.value = previous.notifications;
+    apiUnreadNotificationsCount.value = previous.count;
+    toast('error', apiErrorMessage(error, 'Notifikasi gagal ditandai semua dibaca.'));
+  } finally {
+    markingAllRead.value = false;
   }
 };
 
@@ -288,6 +349,7 @@ const downloadExport = async (type) => {
 
 onMounted(() => {
   loadCurrentUser();
+  loadNotifications();
   window.addEventListener('siperdok:profile-updated', loadCurrentUser);
   initAdminLTEWidgets();
   router.afterEach(() => {

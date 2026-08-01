@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotificationResource;
 use Illuminate\Http\Request;
 
 class MeApiController extends Controller
@@ -17,7 +18,9 @@ class MeApiController extends Controller
             'data' => [
                 'user' => $user,
                 'role' => $user->getRoleNames()->first(),
-                'notifications' => $user->notifications()->latest()->limit(10)->get(),
+                'notifications' => NotificationResource::collection(
+                    $user->notifications()->orderBy('is_read')->latest()->limit(10)->get()
+                ),
                 'unread_notifications_count' => $user->notifications()->where('is_read', false)->count(),
             ],
         ]);

@@ -14,7 +14,7 @@ class ShowProjectApiController extends Controller
 
     public function __invoke(Request $request, int $id)
     {
-        $project = Project::with(['documentType', 'applicant', 'evaluator', 'documents', 'assessmentLogs.user'])
+        $project = Project::with(['documentType', 'applicant', 'evaluator', 'certificateIssuer', 'documents', 'assessmentLogs.user', 'verificationChecklists.item', 'verificationChecklists.reviewer'])
             ->findOrFail($id);
 
         $this->authorize('view', $project);

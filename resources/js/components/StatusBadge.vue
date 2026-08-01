@@ -22,6 +22,7 @@ const badgeClass = computed(() => {
     case 'in_review': return 'badge-in_review';
     case 'revision': return 'badge-revision';
     case 'approved': return 'badge-approved';
+    case 'certificate_issued': return 'badge-success';
     case 'rejected': return 'badge-rejected';
     default: return 'badge-secondary';
   }
@@ -34,6 +35,7 @@ const iconClass = computed(() => {
     case 'in_review': return 'fas fa-clock';
     case 'revision': return 'fas fa-edit';
     case 'approved': return 'fas fa-check-circle';
+    case 'certificate_issued': return 'fas fa-certificate';
     case 'rejected': return 'fas fa-times-circle';
     default: return 'fas fa-info-circle';
   }
@@ -46,6 +48,7 @@ const label = computed(() => {
     case 'in_review': return 'Dalam Penilaian';
     case 'revision': return 'Perlu Revisi';
     case 'approved': return 'Disetujui (Approved)';
+    case 'certificate_issued': return 'Certificate Terbit';
     case 'rejected': return 'Ditolak (Rejected)';
     default: return props.status.toUpperCase();
   }

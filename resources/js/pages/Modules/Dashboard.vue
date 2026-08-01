@@ -40,6 +40,45 @@
       </div>
     </div>
 
+    <div class="row">
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3 elevation-1">
+          <span class="info-box-icon bg-primary elevation-1"><i class="fas fa-paper-plane"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Telah Dikirim</span>
+            <span class="info-box-number h5 font-weight-bold mb-0">{{ formatNumber(submittedCount) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3 elevation-1">
+          <span class="info-box-icon bg-teal elevation-1"><i class="fas fa-certificate"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Certificate Terbit</span>
+            <span class="info-box-number h5 font-weight-bold mb-0">{{ formatNumber(certificateIssuedCount) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3 elevation-1">
+          <span class="info-box-icon bg-purple elevation-1"><i class="fas fa-award"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Siap Diterbitkan</span>
+            <span class="info-box-number h5 font-weight-bold mb-0">{{ formatNumber(readyToIssueCount) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3 elevation-1">
+          <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-clipboard-list"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Checklist Pending</span>
+            <span class="info-box-number h5 font-weight-bold mb-0">{{ formatNumber(incompleteChecklistCount) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Charts Section -->
     <div class="row">
       <div class="col-md-8">
@@ -152,8 +191,12 @@ const totalProjects = ref(props.totalProjects);
 const approvedCount = ref(props.approvedCount);
 const revisionCount = ref(props.revisionCount);
 const rejectedCount = ref(props.rejectedCount);
+const certificateIssuedCount = ref(0);
+const readyToIssueCount = ref(0);
+const incompleteChecklistCount = ref(0);
 const pendingCount = ref(props.pendingCount);
 const draftCount = ref(props.draftCount);
+const submittedCount = ref(0);
 const recentProjects = ref(props.recentProjects);
 const chartLabels = ref(props.chartLabels);
 const chartValues = ref(props.chartValues);
@@ -223,8 +266,12 @@ const loadDashboard = async () => {
   approvedCount.value = data.approved_count;
   revisionCount.value = data.revision_count;
   rejectedCount.value = data.rejected_count;
+  certificateIssuedCount.value = data.certificate_issued_count;
+  readyToIssueCount.value = data.ready_to_issue_count;
+  incompleteChecklistCount.value = data.incomplete_checklist_count;
   pendingCount.value = data.pending_count;
   draftCount.value = data.draft_count;
+  submittedCount.value = data.submitted_count;
   recentProjects.value = data.recent_projects.data || [];
   chartLabels.value = data.chart_labels || [];
   chartValues.value = data.chart_values || [];

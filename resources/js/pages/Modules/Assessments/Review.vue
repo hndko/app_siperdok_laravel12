@@ -77,6 +77,61 @@
           </div>
         </div>
 
+        <div class="card card-outline card-primary shadow-sm mb-4">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h3 class="card-title font-weight-bold text-primary">
+              <i class="fas fa-clipboard-check mr-2"></i> Checklist Verifikasi
+            </h3>
+            <span class="badge badge-primary">{{ checklistSummary.progress_percent || 0 }}%</span>
+          </div>
+          <div class="card-body">
+            <div class="progress mb-3" style="height: 8px;">
+              <div class="progress-bar" :style="{ width: `${checklistSummary.progress_percent || 0}%` }"></div>
+            </div>
+            <div class="small text-muted mb-3">
+              Passed: {{ checklistSummary.passed || 0 }} · Failed: {{ checklistSummary.failed || 0 }} · Pending: {{ checklistSummary.pending || 0 }} · N/A: {{ checklistSummary.not_applicable || 0 }}
+            </div>
+
+            <div v-if="checklistLoading" class="text-center text-muted py-3">
+              <i class="fas fa-circle-notch fa-spin mr-1"></i> Memuat checklist...
+            </div>
+            <div v-else class="list-group mb-3">
+              <div v-for="item in checklistItems" :key="item.checklist_item_id" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <div class="font-weight-bold">
+                      {{ item.item.name }}
+                      <span v-if="item.item.is_required" class="text-danger">*</span>
+                    </div>
+                    <small class="text-muted">{{ item.item.description || '-' }}</small>
+                  </div>
+                  <select v-model="item.status" class="form-control form-control-sm ml-2" style="max-width: 150px;" :disabled="!canUpdateChecklist">
+                    <option value="pending">Pending</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="not_applicable">N/A</option>
+                  </select>
+                </div>
+                <textarea
+                  v-model="item.notes"
+                  class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Catatan checklist..."
+                  :disabled="!canUpdateChecklist"
+                ></textarea>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-block font-weight-bold" :disabled="!canUpdateChecklist || checklistSaving" @click="saveChecklist">
+              <i :class="checklistSaving ? 'fas fa-circle-notch fa-spin mr-1' : 'fas fa-save mr-1'"></i>
+              {{ checklistSaving ? 'Menyimpan...' : 'Simpan Checklist' }}
+            </button>
+            <p v-if="!canUpdateChecklist" class="text-muted small text-center mt-2 mb-0">
+              Checklist hanya dapat diperbarui saat permohonan berstatus in_review oleh penilai/admin.
+            </p>
+          </div>
+        </div>
+
         <div class="card card-outline card-success shadow-sm mb-4">
           <div class="card-header bg-light">
             <h3 class="card-title font-weight-bold text-success">
@@ -127,13 +182,16 @@
 
               <button 
                 type="submit" 
-                :disabled="form.processing || !canAssess || !form.notes.trim()"
+                :disabled="form.processing || !canAssess || !form.notes.trim() || decisionBlocked"
                 class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm"
               >
                 <i class="fas fa-paper-plane mr-2"></i> {{ form.processing ? 'Memproses...' : 'Simpan Keputusan Penilaian' }}
               </button>
               <p v-if="!canAssess" class="text-muted small text-center mt-2 mb-0">
                 Keputusan hanya dapat diberikan setelah review dimulai oleh penilai yang menangani.
+              </p>
+              <p v-if="canAssess && decisionBlocked" class="text-danger small text-center mt-2 mb-0">
+                Lengkapi checklist wajib sebelum menyimpan keputusan. Approval juga diblokir jika ada checklist wajib gagal.
               </p>
             </form>
           </div>
@@ -182,6 +240,18 @@ const currentRole = ref('pemohon');
 const route = useRoute();
 const canStartReview = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'submitted');
 const canAssess = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
+const canUpdateChecklist = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
+const checklistItems = ref([]);
+const checklistSummary = ref({});
+const originalChecklist = ref(new Map());
+const checklistLoading = ref(false);
+const checklistSaving = ref(false);
+const decisionBlocked = computed(() => {
+  const requiredPending = checklistSummary.value.required_pending || 0;
+  const requiredFailed = checklistSummary.value.required_failed || 0;
+
+  return requiredPending > 0 || (form.decision === 'approved' && requiredFailed > 0);
+});
 
 const startReviewForm = reactive({
   notes: '',
@@ -213,6 +283,7 @@ const startReview = async () => {
       notes: startReviewForm.notes,
     });
     await loadProject();
+    await loadChecklist();
     toast('success', 'Review dokumen berhasil dimulai.');
   } catch (error) {
     toast('error', apiErrorMessage(error, 'Review dokumen gagal dimulai.'));
@@ -267,12 +338,67 @@ const loadProject = async () => {
   project.value = response.data.data;
 };
 
+const loadChecklist = async () => {
+  if (!route.params.id) return;
+
+  checklistLoading.value = true;
+  try {
+    const response = await window.axios.get(`/api/v1/projects/${route.params.id}/verification-checklists`);
+    const data = response.data.data;
+    checklistItems.value = (data.items.data || data.items || []).map((item) => ({ ...item }));
+    checklistSummary.value = data.summary || {};
+    originalChecklist.value = new Map(checklistItems.value.map((item) => [item.checklist_item_id, item.status]));
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Checklist gagal dimuat.'));
+  } finally {
+    checklistLoading.value = false;
+  }
+};
+
+const saveChecklist = async () => {
+  const changedCheckedItems = checklistItems.value.some((item) => {
+    const original = originalChecklist.value.get(item.checklist_item_id);
+    return item.checked_at && original && original !== item.status;
+  });
+
+  if (changedCheckedItems) {
+    const confirmed = await confirmAction({
+      title: 'Ubah checklist yang sudah diperiksa?',
+      text: 'Perubahan akan mengganti hasil pemeriksaan sebelumnya.',
+      icon: 'warning',
+      confirmButtonText: 'Ya, ubah',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+  }
+
+  checklistSaving.value = true;
+  try {
+    await window.axios.put(`/api/v1/projects/${project.value.id}/verification-checklists`, {
+      items: checklistItems.value.map((item) => ({
+        checklist_item_id: item.checklist_item_id,
+        status: item.status,
+        notes: item.notes,
+      })),
+    });
+    await loadChecklist();
+    await loadProject();
+    toast('success', 'Checklist berhasil disimpan.');
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Checklist gagal disimpan.'));
+  } finally {
+    checklistSaving.value = false;
+  }
+};
+
 const loadMe = async () => {
   const response = await window.axios.get('/api/v1/me');
   currentRole.value = response.data.data.role || 'pemohon';
 };
 
 onMounted(async () => {
-  await Promise.all([loadProject(), loadMe()]);
+  await Promise.all([loadProject(), loadMe(), loadChecklist()]);
 });
 </script>

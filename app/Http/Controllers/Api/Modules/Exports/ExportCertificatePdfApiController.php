@@ -10,20 +10,21 @@ class ExportCertificatePdfApiController extends Controller
 {
     public function __invoke(int $id)
     {
-        $project = Project::with(['applicant', 'evaluator', 'documentType', 'documents.uploader'])->findOrFail($id);
+        $project = Project::with(['applicant', 'evaluator', 'certificateIssuer', 'documentType', 'documents.uploader'])->findOrFail($id);
 
         $this->authorize('view', $project);
-        abort_unless($project->status === Project::STATUS_APPROVED, 422, 'Dokumen pengesahan hanya dapat diterbitkan untuk permohonan yang telah DISETUJUI.');
+        abort_unless($project->status === Project::STATUS_CERTIFICATE_ISSUED, 422, 'Certificate resmi hanya dapat diunduh setelah dokumen diterbitkan.');
 
         $submittedAt = $project->submitted_at ? $project->submitted_at->format('d F Y') : '-';
         $approvedAt = $project->approved_at ? $project->approved_at->format('d F Y') : date('d F Y');
+        $issuedAt = $project->certificate_issued_at ? $project->certificate_issued_at->format('d F Y') : '-';
         $docTypeName = $project->documentType ? $project->documentType->name : '-';
         $docTypeCode = $project->documentType ? $project->documentType->code : '-';
         $applicantName = $project->applicant ? $project->applicant->name : '-';
         $companyName = $project->applicant ? $project->applicant->company_name : '-';
-        $evaluatorName = $project->evaluator ? $project->evaluator->name : 'Dr. Hendra Penilai';
-        $evaluatorNip = $project->evaluator ? ($project->evaluator->nip_nik ?? '197505052002121002') : '197505052002121002';
-        $year = date('Y');
+        $issuerName = $project->certificateIssuer ? $project->certificateIssuer->name : ($project->evaluator?->name ?? 'Pejabat Penerbit');
+        $issuerNip = $project->certificateIssuer ? ($project->certificateIssuer->nip_nik ?? '-') : ($project->evaluator?->nip_nik ?? '-');
+        $certificateNumber = $project->certificate_number;
 
         $html = <<<HTML
         <!DOCTYPE html>
@@ -56,7 +57,7 @@ class ExportCertificatePdfApiController extends Controller
             </div>
 
             <div class="doc-title">SURAT PENGESAHAN KELAYAKAN DOKUMEN</div>
-            <div class="doc-num">Nomor Penerbitan: SK-SIPERDOK/{$year}/{$project->project_number}</div>
+            <div class="doc-num">Nomor Certificate: {$certificateNumber}</div>
 
             <div class="content">
                 <p>Berdasarkan hasil evaluasi dan penilaian teknis yang dilakukan oleh Tim Evaluator Dokumen Kelayakan, bersama ini menerangkan bahwa permohonan dokumen kelayakan berikut:</p>
@@ -68,27 +69,28 @@ class ExportCertificatePdfApiController extends Controller
                     <tr><td class="label">Perusahaan / Instansi</td><td>: {$companyName}</td></tr>
                     <tr><td class="label">Tanggal Pengajuan</td><td>: {$submittedAt}</td></tr>
                     <tr><td class="label">Tanggal Disetujui</td><td>: {$approvedAt}</td></tr>
+                    <tr><td class="label">Tanggal Diterbitkan</td><td>: {$issuedAt}</td></tr>
                 </table>
                 <div class="stamp-box">
-                    <p class="stamp-title">STATUS: DISETUJUI (APPROVED)</p>
-                    <p style="margin: 5px 0 0 0; font-size: 9pt; color: #555;">Dokumen dinyatakan LENGKAP, SAH, dan MEMENUHI SYARAT KELAYAKAN LINGKUNGAN</p>
+                    <p class="stamp-title">STATUS: CERTIFICATE DITERBITKAN</p>
+                    <p style="margin: 5px 0 0 0; font-size: 9pt; color: #555;">Dokumen dinyatakan LENGKAP, SAH, dan diterbitkan secara elektronik melalui SIPERDOK.</p>
                 </div>
                 <p>Demikian Surat Pengesahan Kelayakan Dokumen ini diterbitkan secara elektronik melalui sistem SIPERDOK untuk dipergunakan sebagaimana mestinya.</p>
             </div>
 
             <div class="footer-sig">
                 <div class="sig-box">
-                    <p>Ditetapkan di Jakarta<br>Pada Tanggal: {$approvedAt}</p>
-                    <p style="font-weight: bold;">An. Tim Evaluator Penilai Dokumen</p>
+                    <p>Ditetapkan di Jakarta<br>Pada Tanggal: {$issuedAt}</p>
+                    <p style="font-weight: bold;">Pejabat Penerbit Dokumen Elektronik</p>
                     <br><br><br>
-                    <p style="font-weight: bold; text-decoration: underline;">{$evaluatorName}</p>
-                    <p style="font-size: 9pt; color: #666;">NIP. {$evaluatorNip}</p>
+                    <p style="font-weight: bold; text-decoration: underline;">{$issuerName}</p>
+                    <p style="font-size: 9pt; color: #666;">NIP. {$issuerNip}</p>
                 </div>
             </div>
         </body>
         </html>
         HTML;
 
-        return Pdf::loadHTML($html)->download('Surat_Pengesahan_Kelayakan_' . $project->project_number . '.pdf');
+        return Pdf::loadHTML($html)->download('Surat_Pengesahan_Kelayakan_'.$project->project_number.'.pdf');
     }
 }

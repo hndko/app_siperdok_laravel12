@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
@@ -21,20 +21,31 @@ class Project extends Model
         'submitted_at',
         'approved_at',
         'rejected_at',
+        'certificate_number',
+        'certificate_issued_at',
+        'certificate_issued_by',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'certificate_issued_at' => 'datetime',
     ];
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_SUBMITTED = 'submitted';
+
     public const STATUS_IN_REVIEW = 'in_review';
+
     public const STATUS_REVISION = 'revision';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_CERTIFICATE_ISSUED = 'certificate_issued';
 
     public const REVIEWABLE_STATUSES = [
         self::STATUS_SUBMITTED,
@@ -42,11 +53,13 @@ class Project extends Model
         self::STATUS_REVISION,
         self::STATUS_APPROVED,
         self::STATUS_REJECTED,
+        self::STATUS_CERTIFICATE_ISSUED,
     ];
 
     public const TERMINAL_STATUSES = [
         self::STATUS_APPROVED,
         self::STATUS_REJECTED,
+        self::STATUS_CERTIFICATE_ISSUED,
     ];
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
@@ -115,5 +128,15 @@ class Project extends Model
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function verificationChecklists()
+    {
+        return $this->hasMany(ProjectVerificationChecklist::class);
+    }
+
+    public function certificateIssuer()
+    {
+        return $this->belongsTo(User::class, 'certificate_issued_by');
     }
 }

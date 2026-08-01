@@ -11,13 +11,14 @@
               <button @click="printCertificate" class="btn btn-primary btn-sm mr-2 font-weight-bold">
                 <i class="fas fa-print mr-1"></i> Cetak Surat (Print)
               </button>
-              <button type="button" class="btn btn-success btn-sm font-weight-bold" @click="downloadCertificate">
+              <button type="button" class="btn btn-success btn-sm font-weight-bold" :disabled="project.status !== 'certificate_issued'" @click="downloadCertificate">
                 <i class="fas fa-file-pdf mr-1"></i> Unduh File PDF
               </button>
             </div>
           </div>
 
           <div class="card-body p-5 certificate-print-area bg-white">
+            <div v-if="project.status !== 'certificate_issued'" class="draft-watermark">DRAFT</div>
             <div class="header text-center border-bottom pb-3 mb-4">
               <h4 class="font-weight-bold text-uppercase mb-1" style="letter-spacing: 1px;">REPUBLIK INDONESIA</h4>
               <h6 class="text-secondary mb-0">SISTEM INFORMASI PERSETUJUAN DOKUMEN KELAYAKAN (SIPERDOK)</h6>
@@ -26,7 +27,7 @@
 
             <div class="text-center mb-4">
               <h4 class="font-weight-bold text-uppercase text-underline text-dark" style="text-decoration: underline;">SURAT PENGESAHAN KELAYAKAN DOKUMEN</h4>
-              <div class="text-muted small">Nomor Penerbitan: SK-SIPERDOK/{{ year }}/{{ project.project_number }}</div>
+              <div class="text-muted small">Nomor Certificate: {{ project.certificate_number || `DRAFT/${year}/${project.project_number}` }}</div>
             </div>
 
             <div class="content text-secondary mb-4" style="font-size: 1.05rem;">
@@ -62,6 +63,10 @@
                     <td class="font-weight-bold">Tanggal Disetujui</td>
                     <td>: {{ project.approved_at ? formatDate(project.approved_at) : formatDate(new Date()) }}</td>
                   </tr>
+                  <tr>
+                    <td class="font-weight-bold">Tanggal Diterbitkan</td>
+                    <td>: {{ project.certificate_issued_at ? formatDate(project.certificate_issued_at) : 'Belum diterbitkan' }}</td>
+                  </tr>
                 </tbody>
               </table>
 
@@ -75,12 +80,12 @@
 
             <div class="row mt-5">
               <div class="col-md-6 offset-md-6 text-center">
-                <p class="mb-1">Ditetapkan di Jakarta<br>Pada Tanggal: {{ project.approved_at ? formatDate(project.approved_at) : formatDate(new Date()) }}</p>
-                <p class="font-weight-bold mb-5">An. Tim Evaluator Penilai Dokumen</p>
+                <p class="mb-1">Ditetapkan di Jakarta<br>Pada Tanggal: {{ project.certificate_issued_at ? formatDate(project.certificate_issued_at) : formatDate(new Date()) }}</p>
+                <p class="font-weight-bold mb-5">Pejabat Penerbit Dokumen Elektronik</p>
                 <p class="font-weight-bold text-dark mb-0 text-underline" style="text-decoration: underline;">
-                  {{ project.evaluator ? project.evaluator.name : 'Dr. Hendra Penilai' }}
+                  {{ project.certificate_issuer ? project.certificate_issuer.name : (project.evaluator ? project.evaluator.name : 'Pejabat Penerbit') }}
                 </p>
-                <small class="text-muted d-block">NIP. {{ project.evaluator ? (project.evaluator.nip_nik || '197505052002121002') : '197505052002121002' }}</small>
+                <small class="text-muted d-block">NIP. {{ project.certificate_issuer ? (project.certificate_issuer.nip_nik || '-') : (project.evaluator ? (project.evaluator.nip_nik || '-') : '-') }}</small>
               </div>
             </div>
           </div>
@@ -145,5 +150,22 @@ onMounted(() => {
 @media print {
   .no-print { display: none !important; }
   .certificate-print-area { padding: 0 !important; }
+}
+
+.certificate-print-area {
+  position: relative;
+}
+
+.draft-watermark {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-22deg);
+  font-size: 5rem;
+  font-weight: 800;
+  color: rgba(220, 53, 69, 0.14);
+  border: 6px solid rgba(220, 53, 69, 0.12);
+  padding: 8px 28px;
+  pointer-events: none;
 }
 </style>

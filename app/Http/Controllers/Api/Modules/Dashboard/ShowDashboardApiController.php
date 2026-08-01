@@ -22,10 +22,18 @@ class ShowDashboardApiController extends Controller
 
         $totalProjects = (clone $query)->count();
         $approvedCount = (clone $query)->where('status', Project::STATUS_APPROVED)->count();
+        $certificateIssuedCount = (clone $query)->where('status', Project::STATUS_CERTIFICATE_ISSUED)->count();
         $revisionCount = (clone $query)->where('status', Project::STATUS_REVISION)->count();
         $rejectedCount = (clone $query)->where('status', Project::STATUS_REJECTED)->count();
+        $submittedCount = (clone $query)->where('status', Project::STATUS_SUBMITTED)->count();
+        $inReviewCount = (clone $query)->where('status', Project::STATUS_IN_REVIEW)->count();
         $pendingCount = (clone $query)->whereIn('status', [Project::STATUS_SUBMITTED, Project::STATUS_IN_REVIEW])->count();
         $draftCount = (clone $query)->where('status', Project::STATUS_DRAFT)->count();
+        $incompleteChecklistCount = (clone $query)
+            ->where('status', Project::STATUS_IN_REVIEW)
+            ->whereHas('verificationChecklists', fn ($checklist) => $checklist->where('status', 'pending'))
+            ->count();
+        $readyToIssueCount = (clone $query)->where('status', Project::STATUS_APPROVED)->count();
 
         $recentProjects = Project::query()
             ->with(['applicant', 'evaluator', 'documentType'])
@@ -52,18 +60,24 @@ class ShowDashboardApiController extends Controller
         return $this->success([
             'total_projects' => $totalProjects,
             'approved_count' => $approvedCount,
+            'certificate_issued_count' => $certificateIssuedCount,
             'revision_count' => $revisionCount,
             'rejected_count' => $rejectedCount,
+            'submitted_count' => $submittedCount,
+            'in_review_count' => $inReviewCount,
             'pending_count' => $pendingCount,
             'draft_count' => $draftCount,
+            'incomplete_checklist_count' => $incompleteChecklistCount,
+            'ready_to_issue_count' => $readyToIssueCount,
             'recent_projects' => ProjectResource::collection($recentProjects),
-            'chart_labels' => $monthlyChartData->pluck('month')->map(fn ($month) => date('M Y', strtotime($month . '-01'))),
+            'chart_labels' => $monthlyChartData->pluck('month')->map(fn ($month) => date('M Y', strtotime($month.'-01'))),
             'chart_values' => $monthlyChartData->pluck('count'),
             'status_counts' => [
                 'Draft' => $draftCount,
                 'Diproses / Dalam Penilaian' => $pendingCount,
                 'Perlu Revisi' => $revisionCount,
                 'Disetujui' => $approvedCount,
+                'Certificate Terbit' => $certificateIssuedCount,
                 'Ditolak' => $rejectedCount,
             ],
         ]);

@@ -26,6 +26,7 @@
                 <option value="in_review">Dalam Penilaian</option>
                 <option value="revision">Perlu Revisi</option>
                 <option value="approved">Disetujui</option>
+                <option value="certificate_issued">Certificate Terbit</option>
                 <option value="rejected">Ditolak</option>
               </select>
             </div>
