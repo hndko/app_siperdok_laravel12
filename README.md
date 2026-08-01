@@ -1,6 +1,6 @@
 # 📄 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan
 
-SIPERDOK adalah aplikasi web berbasis Laravel 12 dan AdminLTE 3.2.0 yang dirancang untuk mengelola seluruh tahapan permohonan dokumen kelayakan lingkungan hidup secara terstruktur, transparan, dan berkinerja tinggi.
+SIPERDOK adalah aplikasi web berbasis Laravel 12, Vue 3, dan AdminLTE 3.2.0 yang dirancang untuk mengelola seluruh tahapan permohonan dokumen kelayakan lingkungan hidup secara terstruktur, transparan, dan berkinerja tinggi.
 
 ---
 
@@ -31,13 +31,14 @@ Seiring pesatnya pertumbuhan pengajuan izin kelayakan setiap tahunnya, instansi 
 
 ### 🎯 Fitur Utama
 
-- 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`).
+- 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`) dengan layout terpisah `app-auth` & `app-modules`.
+- 💚 **Frontend Vue 3 Reaktif**: Komponen reaktif Vue 3 Single File Components (`StatusBadge.vue`, `DecisionModal.vue`) terintegrasi dengan Vite bundler.
 - 📁 **Manajemen Permohonan & Berkas**: Pembuatan draft, upload dokumen dengan validasi format & ukuran (PDF/Docx/Image max 10MB), serta versioning berkas permohonan.
 - ⚖️ **Modul Penilaian & Keputusan**: Panel penilai untuk keputusan **Setuju (Approved)**, **Revisi (Revision)**, dan **Ditolak (Rejected)** dilengkapi catatan evaluasi dan notifikasi otomatis.
 - 📑 **Audit Trail & Histori Penilaian**: Catatan riwayat kronologis lengkap untuk setiap aksi perubahan status permohonan.
 - 📊 **Dashboard Analitik Interactive**: Visualisasi tren bulanan dan sebaran status permohonan menggunakan Chart.js.
 - 🖨️ **Export PDF & Excel/CSV**: Penerbitan Surat Pengesahan Dokumen Kelayakan (PDF) serta export laporan daftar permohonan (CSV/Excel).
-- ⚡ **Performa & Dataset Skala Besar**: Dilengkapi dengan *batch seeder* 10.000+ data proyek & 2.000 user yang dioptimasi menggunakan indeks database.
+- ⚡ **Performa & Eager Loading**: Bebas masalah N+1 query dengan eager loading teroptimasi dan *batch seeder* 10.000+ data proyek & 2.000 user pada PostgreSQL `db_siperdok_laravel12`.
 
 ### 📐 Alur Bisnis Sistem (Business Workflow)
 
@@ -66,7 +67,7 @@ Sebelum memasang dan menjalankan proyek ini, pastikan perangkat Anda memenuhi sp
 - 🐘 **PHP**: versi `>= 8.2` (dengan ekstensi `pdo`, `pdo_pgsql`/`pdo_mysql`/`pdo_sqlite`, `gd`, `zip`, `mbstring` aktif).
 - 📦 **Composer**: versi `>= 2.6.0`.
 - 🟢 **Node.js**: versi `>= 18.0.0` & **NPM** `>= 9.0.0`.
-- 🗄️ **Database**: PostgreSQL `>= 15.0` (atau SQLite / MySQL 8.0).
+- 🗄️ **Database**: PostgreSQL `>= 15.0` (Nama Database: `db_siperdok_laravel12`, Port: `5432`, Password: `doko1337`).
 - 🧰 **Git**: versi `>= 2.40.0`.
 
 ---
@@ -81,23 +82,29 @@ Ikuti langkah-langkah berbasis perintah terminal berikut untuk memasang proyek d
    cd app_siperdok_laravel12
    ```
 
-2. **Pasang Dependensi PHP (Composer)**
+2. **Pasang Dependensi PHP & NPM**
    ```bash
    composer install
+   npm install
    ```
 
-3. **Konfigurasi Environment (.env)**
+3. **Kompilasi Aset Frontend (Vue 3 + Vite)**
+   ```bash
+   npm run build
+   ```
+
+4. **Konfigurasi Environment (.env)**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
 
-4. **Jalankan Migrasi Database & Seeder Dataset (10.000 Proyek & 2.000 Users)**
+5. **Jalankan Migrasi Database & Seeder Dataset (10.000 Proyek & 2.000 Users)**
    ```bash
    php artisan migrate:fresh --seed
    ```
 
-5. **Buat Symbolic Link Storage (Untuk Berkas Upload)**
+6. **Buat Symbolic Link Storage (Untuk Berkas Upload)**
    ```bash
    php artisan storage:link
    ```
@@ -113,7 +120,7 @@ Password default untuk seluruh akun demo adalah: **`password`**
 | Role User | Email Login | Hak Akses Utama |
 | :--- | :--- | :--- |
 | 🧑‍💻 **Pemohon** | `pemohon@example.com` | Dashboard Pemohon, Pengajuan Proyek Baru, Upload Berkas, Edit Draft, Submit Ulang Revisi, Unduh Sertifikat PDF. |
-| 👨‍⚖️ **Penilai** | `penilai@example.com` | Dashboard Penilai, Review Permohonan, Input Decision (Approve / Revision / Reject), Catatan Evaluasi, Audit Log. |
+| 👨‍⚖️ **Penilai** | `penilai@example.com` | Dashboard Penilai, Review Permohonan (Vue 3 Component), Input Decision (Approve / Revision / Reject), Catatan Evaluasi, Audit Log. |
 | 🛡️ **Admin** | `admin@example.com` | Master Data Users, Master Jenis Dokumen, Laporan Global & Dashboard Monitoring. |
 
 ### 💻 Menjalankan Server Aplikasi
