@@ -46,17 +46,25 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        // 2. Chart.js Data
-        // Monthly submission chart data
+        // 2. Chart.js Data (Cross-Database Compatible: PostgreSQL, MySQL, SQLite)
+        $driver = DB::getDriverName();
+        if ($driver === 'pgsql') {
+            $monthExpr = "to_char(created_at, 'YYYY-MM')";
+        } elseif ($driver === 'mysql') {
+            $monthExpr = "DATE_FORMAT(created_at, '%Y-%m')";
+        } else {
+            $monthExpr = "strftime('%Y-%m', created_at)";
+        }
+
         $monthlyChartData = Project::select(
-                DB::raw("strftime('%Y-%m', created_at) as month"),
+                DB::raw("{$monthExpr} as month"),
                 DB::raw("count(*) as count")
             )
             ->when(!$user->hasRole('admin') && !$user->hasRole('penilai'), function ($q) use ($user) {
                 $q->where('applicant_id', $user->id);
             })
-            ->groupBy('month')
-            ->orderBy('month', 'asc')
+            ->groupBy(DB::raw($monthExpr))
+            ->orderBy(DB::raw($monthExpr), 'asc')
             ->limit(12)
             ->get();
 
