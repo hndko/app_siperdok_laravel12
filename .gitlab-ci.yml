@@ -1,0 +1,27 @@
+image: php:8.2-cli
+
+stages:
+  - test
+  - build
+
+cache:
+  paths:
+    - vendor/
+    - node_modules/
+
+variables:
+  DB_CONNECTION: sqlite
+  DB_DATABASE: ":memory:"
+
+before_script:
+  - apt-get update -yqq
+  - apt-get install -yqq git unzip libpng-dev libzip-dev
+  - docker-php-ext-install pdo pdo_sqlite zip gd
+  - curl -sS https://getcomposer.org/installer | php
+  - php composer.phar install --prefer-dist --no-ansi --no-interaction --no-progress
+
+unit_and_feature_tests:
+  stage: test
+  script:
+    - php artisan key:generate
+    - php artisan test

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: siperdok-app
+    container_name: siperdok_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - .:/var/www
+    networks:
+      - siperdok-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: siperdok_webserver
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker-compose/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - siperdok-network
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: siperdok_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-app_siperdok}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - siperdok-network
+
+  redis:
+    image: redis:alpine
+    container_name: siperdok_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - siperdok-network
+
+networks:
+  siperdok-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
