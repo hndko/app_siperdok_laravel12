@@ -1,12 +1,45 @@
-# SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan
+# 📄 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan
 
-**SIPERDOK** adalah aplikasi berbasis web yang dibangun menggunakan **Laravel 12**, **AdminLTE 3.2.0**, dan **PostgreSQL** untuk mengelola seluruh tahapan proses pengajuan, verifikasi administrasi, hingga keputusan akhir kelayakan dokumen (*Approved*, *Revision*, *Rejected*) secara terstruktur, cepat, dan aman.
-
-System ini dirancang dengan arsitektur berkinerja tinggi yang mampu menangani puluhan ribu data permohonan dokumen (*10.000+ data proyek*) beserta riwayat penilaian audit trail secara efisien.
+SIPERDOK adalah aplikasi web berbasis Laravel 12 dan AdminLTE 3.2.0 yang dirancang untuk mengelola seluruh tahapan permohonan dokumen kelayakan lingkungan hidup secara terstruktur, transparan, dan berkinerja tinggi.
 
 ---
 
-## 📐 Alur Bisnis Sistem (Business Flow)
+## 📑 Daftar Isi
+
+- [📄 SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan](#-siperdok---sistem-informasi-persetujuan-dokumen-kelayakan)
+  - [📑 Daftar Isi](#-daftar-isi)
+  - [💡 Deskripsi Proyek](#-deskripsi-proyek)
+    - [🎯 Fitur Utama](#-fitur-utama)
+    - [📐 Alur Bisnis Sistem (Business Workflow)](#-alur-bisnis-sistem-business-workflow)
+  - [📋 Prasyarat](#-prasyarat)
+  - [⚙️ Instalasi](#️-instalasi)
+  - [🚀 Penggunaan](#-penggunaan)
+    - [🔑 Akun Demo \& Hak Akses](#-akun-demo--hak-akses)
+    - [🧪 Menjalankan Feature Tests](#-menjalankan-feature-tests)
+    - [📡 Penggunaan REST API (Sanctum)](#-penggunaan-rest-api-sanctum)
+    - [🐳 Menjalankan via Docker](#-menjalankan-via-docker)
+  - [🤝 Kontribusi](#-kontribusi)
+  - [📜 Lisensi](#-lisensi)
+
+---
+
+## 💡 Deskripsi Proyek
+
+Seiring pesatnya pertumbuhan pengajuan izin kelayakan setiap tahunnya, instansi pemerintah memerlukan sistem pendokumentasian yang mampu menangani ratusan ribu data permohonan beserta riwayat audit penilaiannya secara cepat dan responsif.
+
+**SIPERDOK** memecahkan masalah lambatnya verifikasi manual melalui otomatisasi alur kerja digital mulai dari pembuatan draft permohonan, unggah berkas, verifikasi administrasi, hingga penerbitan Surat Pengesahan Dokumen Kelayakan berbasis PDF.
+
+### 🎯 Fitur Utama
+
+- 🔐 **Autentikasi & Multi-Role Access**: Pemisahan hak akses fleksibel berbasis Spatie Permission (`Pemohon`, `Penilai`, `Admin`).
+- 📁 **Manajemen Permohonan & Berkas**: Pembuatan draft, upload dokumen dengan validasi format & ukuran (PDF/Docx/Image max 10MB), serta versioning berkas permohonan.
+- ⚖️ **Modul Penilaian & Keputusan**: Panel penilai untuk keputusan **Setuju (Approved)**, **Revisi (Revision)**, dan **Ditolak (Rejected)** dilengkapi catatan evaluasi dan notifikasi otomatis.
+- 📑 **Audit Trail & Histori Penilaian**: Catatan riwayat kronologis lengkap untuk setiap aksi perubahan status permohonan.
+- 📊 **Dashboard Analitik Interactive**: Visualisasi tren bulanan dan sebaran status permohonan menggunakan Chart.js.
+- 🖨️ **Export PDF & Excel/CSV**: Penerbitan Surat Pengesahan Dokumen Kelayakan (PDF) serta export laporan daftar permohonan (CSV/Excel).
+- ⚡ **Performa & Dataset Skala Besar**: Dilengkapi dengan *batch seeder* 10.000+ data proyek & 2.000 user yang dioptimasi menggunakan indeks database.
+
+### 📐 Alur Bisnis Sistem (Business Workflow)
 
 ```
 [PEMOHON]                                        [PENGUJI / PENILAI]
@@ -26,95 +59,123 @@ System ini dirancang dengan arsitektur berkinerja tinggi yang mampu menangani pu
 
 ---
 
-## 🛠️ Technology Stack & Dependencies
+## 📋 Prasyarat
 
-1. **Backend Framework**: PHP 8.2+ / Laravel 12
-2. **Database**: PostgreSQL / SQLite / MySQL (Optimized with Database Indexes for 10.000+ records)
-3. **Frontend UI Template**: AdminLTE 3.2.0 (Bootstrap 4, FontAwesome 5, jQuery)
-4. **Authentication & Security**: Laravel Sanctum (Session & REST API Token)
-5. **Role & Permission**: Spatie `laravel-permission` (`admin`, `pemohon`, `penilai`)
-6. **Analytics & Charts**: Chart.js (Monthly Submissions Trend & Status Breakdown)
-7. **Exporting**: `barryvdh/laravel-dompdf` (PDF Surat Pengesahan) & CSV/Excel Exports
-8. **Containerization & CI/CD**: Docker, Docker Compose, GitLab CI, GitHub Actions
+Sebelum memasang dan menjalankan proyek ini, pastikan perangkat Anda memenuhi spesifikasi minimum berikut:
+
+- 🐘 **PHP**: versi `>= 8.2` (dengan ekstensi `pdo`, `pdo_pgsql`/`pdo_mysql`/`pdo_sqlite`, `gd`, `zip`, `mbstring` aktif).
+- 📦 **Composer**: versi `>= 2.6.0`.
+- 🟢 **Node.js**: versi `>= 18.0.0` & **NPM** `>= 9.0.0`.
+- 🗄️ **Database**: PostgreSQL `>= 15.0` (atau SQLite / MySQL 8.0).
+- 🧰 **Git**: versi `>= 2.40.0`.
 
 ---
 
-## 🔑 Hak Akses User & Demo Credentials
+## ⚙️ Instalasi
+
+Ikuti langkah-langkah berbasis perintah terminal berikut untuk memasang proyek di lingkungan lokal Anda:
+
+1. **Clone Repository Proyek**
+   ```bash
+   git clone https://gitlab.com/username/app_siperdok_laravel12.git
+   cd app_siperdok_laravel12
+   ```
+
+2. **Pasang Dependensi PHP (Composer)**
+   ```bash
+   composer install
+   ```
+
+3. **Konfigurasi Environment (.env)**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Jalankan Migrasi Database & Seeder Dataset (10.000 Proyek & 2.000 Users)**
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
+
+5. **Buat Symbolic Link Storage (Untuk Berkas Upload)**
+   ```bash
+   php artisan storage:link
+   ```
+
+---
+
+## 🚀 Penggunaan
+
+### 🔑 Akun Demo & Hak Akses
 
 Password default untuk seluruh akun demo adalah: **`password`**
 
-| Role User | Email Demo | Hak Akses Utama |
+| Role User | Email Login | Hak Akses Utama |
 | :--- | :--- | :--- |
-| **Pemohon Dokumen** | `pemohon@example.com` | Dashboard Pemohon, Create Project, Upload Berkas, Edit Draft, Perbaiki Dokumen (Revision), Submit Ulang, Lihat Status & History. |
-| **Penilai Dokumen** | `penilai@example.com` | Dashboard Penilai, Review Seluruh Permohonan, Beri Catatan Evaluasi, Setuju (Approve), Request Revisi, Tolak (Reject), Histori Log. |
-| **Administrator** | `admin@example.com` | Full Master Data (User Management, Document Types, Audit Trail, Dashboard Monitoring). |
+| 🧑‍💻 **Pemohon** | `pemohon@example.com` | Dashboard Pemohon, Pengajuan Proyek Baru, Upload Berkas, Edit Draft, Submit Ulang Revisi, Unduh Sertifikat PDF. |
+| 👨‍⚖️ **Penilai** | `penilai@example.com` | Dashboard Penilai, Review Permohonan, Input Decision (Approve / Revision / Reject), Catatan Evaluasi, Audit Log. |
+| 🛡️ **Admin** | `admin@example.com` | Master Data Users, Master Jenis Dokumen, Laporan Global & Dashboard Monitoring. |
 
----
+### 💻 Menjalankan Server Aplikasi
 
-## 🚀 Petunjuk Menjalankan Project (Installation Guide)
-
-### 1. Clone & Setup Environment
-```bash
-git clone <URL_REPOSITORY_GITLAB>
-cd app_siperdok_laravel12
-```
-
-### 2. Install Dependency Composer & NPM
-```bash
-composer install
-```
-
-### 3. Konfigurasi File `.env`
-Salin file `.env.example` menjadi `.env`:
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-
-*Secara default `.env` dikonfigurasi menggunakan SQLite / PostgreSQL. Jika menggunakan PostgreSQL, pastikan kredensial `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD` sesuai.*
-
-### 4. Jalankan Migrasi & Database Seeder (10.000 Proyek + 2.000 Users)
-Jalankan perintah berikut untuk membuat struktur tabel dan mengisi **10.000 Data Proyek** dan **2.000 Users**:
-```bash
-php artisan migrate:fresh --seed
-```
-
-### 5. Buat Symbolic Link Storage (Untuk Upload Berkas)
-```bash
-php artisan storage:link
-```
-
-### 6. Jalankan Server Lokal
+Jalankan perintah berikut pada terminal untuk mengaktifkan web server lokal:
 ```bash
 php artisan serve
 ```
-Aplikasi kini dapat diakses melalui browser di: **`http://127.0.0.1:8000`**
+Akses aplikasi melalui browser pada tautan: **`http://127.0.0.1:8000`**
 
----
+### 🧪 Menjalankan Feature Tests
 
-## 🧪 Menjalankan Automated Feature & Unit Tests
-
-Proyek ini dilengkapi dengan Feature Tests lengkap untuk menguji otentikasi dan alur bisnis persetujuan dokumen:
+Proyek ini telah dilengkapi dengan pengujian otomatis (*Automated PHPUnit Tests*) untuk otentikasi dan alur persetujuan permohonan:
 ```bash
 php artisan test
 ```
 
----
+### 📡 Penggunaan REST API (Sanctum)
 
-## 🐳 Menjalankan dengan Docker
+Aplikasi menyediakan API RESTful untuk integrasi aplikasi mobile atau SPA:
 
+```bash
+# 1. Authenticaton Login (Mendapatkan Bearer Token)
+curl -X POST http://127.0.0.1:8000/api/v1/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"pemohon@example.com","password":"password"}'
+
+# 2. Mendapatkan Daftar Permohonan Dokumen
+curl -X GET http://127.0.0.1:8000/api/v1/projects \
+     -H "Authorization: Bearer <TOKEN_ANDA>"
+
+# 3. Memproses Penilaian Dokumen (Role Penilai/Admin)
+curl -X POST http://127.0.0.1:8000/api/v1/assessments/1 \
+     -H "Authorization: Bearer <TOKEN_ANDA>" \
+     -H "Content-Type: application/json" \
+     -d '{"decision":"approved","notes":"Dokumen disetujui."}'
+```
+
+### 🐳 Menjalankan via Docker
+
+Untuk menjalankan proyek dalam kontainer Docker:
 ```bash
 docker-compose up -d --build
 ```
-Aplikasi akan berjalan pada port `8080` (http://localhost:8080).
+Aplikasi akan aktif dan dapat diakses pada port **`8080`** (`http://localhost:8080`).
 
 ---
 
-## 📡 REST API Endpoints (Laravel Sanctum)
+## 🤝 Kontribusi
 
-| Method | Endpoint | Deskripsi | Authentication |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/login` | Login user & dapatkan Sanctum Bearer Token | Public |
-| `GET` | `/api/v1/projects` | Daftar permohonan dokumen (dengan filter status) | Bearer Token |
-| `GET` | `/api/v1/projects/{id}` | Detail permohonan dokumen & audit trail | Bearer Token |
-| `POST` | `/api/v1/assessments/{id}` | Penilaian permohonan (Approve, Revision, Reject) | Bearer Token (Penilai/Admin) |
+Kami menyambut baik kontribusi untuk pengembangan dan perbaikan kode SIPERDOK. Langkah-langkah kontribusi:
+
+1. **Fork** repository ini.
+2. Buat *feature branch* baru (`git checkout -b feature/FiturBaru`).
+3. Lakukan **Commit** perubahan Anda dengan pesan yang jelas (`git commit -m 'feat: menambahkan fitur X'`).
+4. **Push** ke branch Anda (`git push origin feature/FiturBaru`).
+5. Buat **Pull Request / Merge Request** untuk ditinjau oleh tim pengembang utama.
+
+---
+
+## 📜 Lisensi
+
+Proyek ini dilindungi di bawah lisensi **MIT License**. Anda bebas menggunakan, mengubah, dan mendistribusikan perangkat lunak ini sesuai dengan ketentuan lisensi.
+
+Copyright © 2026 **SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan**.
