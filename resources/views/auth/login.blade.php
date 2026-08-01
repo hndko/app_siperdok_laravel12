@@ -68,14 +68,14 @@
             <div class="border-top pt-3 mt-3">
                 <p class="small text-muted font-weight-bold mb-2"><i class="fas fa-key mr-1"></i> Quick Demo Login Credentials:</p>
                 <div class="btn-group-vertical w-100">
-                    <button class="btn btn-outline-info btn-sm btn-role mb-1" onclick="fillLogin('pemohon@siperdok.go.id', 'password123')">
-                        <i class="fas fa-user-tie mr-2"></i> Pemohon: <code>pemohon@siperdok.go.id</code>
+                    <button class="btn btn-outline-info btn-sm btn-role mb-1" onclick="fillLogin('pemohon@example.com', 'password')">
+                        <i class="fas fa-user-tie mr-2"></i> Pemohon: <code>pemohon@example.com</code>
                     </button>
-                    <button class="btn btn-outline-success btn-sm btn-role mb-1" onclick="fillLogin('penilai@siperdok.go.id', 'password123')">
-                        <i class="fas fa-user-check mr-2"></i> Penilai: <code>penilai@siperdok.go.id</code>
+                    <button class="btn btn-outline-success btn-sm btn-role mb-1" onclick="fillLogin('penilai@example.com', 'password')">
+                        <i class="fas fa-user-check mr-2"></i> Penilai: <code>penilai@example.com</code>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm btn-role" onclick="fillLogin('admin@siperdok.go.id', 'password123')">
-                        <i class="fas fa-user-shield mr-2"></i> Admin: <code>admin@siperdok.go.id</code>
+                    <button class="btn btn-outline-secondary btn-sm btn-role" onclick="fillLogin('admin@example.com', 'password')">
+                        <i class="fas fa-user-shield mr-2"></i> Admin: <code>admin@example.com</code>
                     </button>
                 </div>
             </div>

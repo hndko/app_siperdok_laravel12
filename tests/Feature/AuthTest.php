@@ -26,14 +26,14 @@ class AuthTest extends TestCase
     public function test_users_can_authenticate_using_the_login_screen()
     {
         $user = User::factory()->create([
-            'email' => 'pemohon_test@siperdok.go.id',
-            'password' => bcrypt('password123'),
+            'email' => 'pemohon_test@example.com',
+            'password' => bcrypt('password'),
         ]);
         $user->assignRole('pemohon');
 
         $response = $this->post('/login', [
             'email' => $user->email,
-            'password' => 'password123',
+            'password' => 'password',
         ]);
 
         $this->assertAuthenticated();
@@ -43,13 +43,13 @@ class AuthTest extends TestCase
     public function test_user_can_login_via_sanctum_api()
     {
         $user = User::factory()->create([
-            'email' => 'api_test@siperdok.go.id',
-            'password' => bcrypt('password123'),
+            'email' => 'api_test@example.com',
+            'password' => bcrypt('password'),
         ]);
 
         $response = $this->postJson('/api/v1/login', [
             'email' => $user->email,
-            'password' => 'password123',
+            'password' => 'password',
         ]);
 
         $response->assertStatus(200)

@@ -41,13 +41,13 @@ System ini dirancang dengan arsitektur berkinerja tinggi yang mampu menangani pu
 
 ## 🔑 Hak Akses User & Demo Credentials
 
-Password default untuk seluruh akun demo adalah: **`password123`**
+Password default untuk seluruh akun demo adalah: **`password`**
 
 | Role User | Email Demo | Hak Akses Utama |
 | :--- | :--- | :--- |
-| **Pemohon Dokumen** | `pemohon@siperdok.go.id` | Dashboard Pemohon, Create Project, Upload Berkas, Edit Draft, Perbaiki Dokumen (Revision), Submit Ulang, Lihat Status & History. |
-| **Penilai Dokumen** | `penilai@siperdok.go.id` | Dashboard Penilai, Review Seluruh Permohonan, Beri Catatan Evaluasi, Setuju (Approve), Request Revisi, Tolak (Reject), Histori Log. |
-| **Administrator** | `admin@siperdok.go.id` | Full Master Data (User Management, Document Types, Audit Trail, Dashboard Monitoring). |
+| **Pemohon Dokumen** | `pemohon@example.com` | Dashboard Pemohon, Create Project, Upload Berkas, Edit Draft, Perbaiki Dokumen (Revision), Submit Ulang, Lihat Status & History. |
+| **Penilai Dokumen** | `penilai@example.com` | Dashboard Penilai, Review Seluruh Permohonan, Beri Catatan Evaluasi, Setuju (Approve), Request Revisi, Tolak (Reject), Histori Log. |
+| **Administrator** | `admin@example.com` | Full Master Data (User Management, Document Types, Audit Trail, Dashboard Monitoring). |
 
 ---
 

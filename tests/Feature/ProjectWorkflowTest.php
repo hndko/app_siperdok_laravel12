@@ -28,14 +28,14 @@ class ProjectWorkflowTest extends TestCase
         Storage::fake('public');
 
         $pemohon = User::factory()->create([
-            'email' => 'pemohon_workflow@siperdok.go.id',
-            'password' => bcrypt('password123'),
+            'email' => 'pemohon_workflow@example.com',
+            'password' => bcrypt('password'),
         ]);
         $pemohon->assignRole('pemohon');
 
         $penilai = User::factory()->create([
-            'email' => 'penilai_workflow@siperdok.go.id',
-            'password' => bcrypt('password123'),
+            'email' => 'penilai_workflow@example.com',
+            'password' => bcrypt('password'),
         ]);
         $penilai->assignRole('penilai');
 
