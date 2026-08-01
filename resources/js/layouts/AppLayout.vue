@@ -50,6 +50,11 @@
               <small class="text-white-50 d-block">{{ user ? (user.company_name || 'Pengguna Sistem') : '' }}</small>
               <span class="badge badge-light mt-2">{{ (userRole || 'USER').toUpperCase() }}</span>
             </li>
+            <li class="user-footer p-2 bg-light border-bottom">
+              <Link href="/profile" class="btn btn-default btn-flat btn-block font-weight-bold">
+                <i class="fas fa-user-cog mr-1"></i> Edit Profil
+              </Link>
+            </li>
             <li class="user-footer p-2 bg-light">
               <button type="button" class="btn btn-danger btn-flat btn-block font-weight-bold" @click="logout">
                 <i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)
@@ -189,7 +194,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { apiErrorMessage, confirmAction, toast } from '../lib/feedback';
 
@@ -283,9 +288,14 @@ const downloadExport = async (type) => {
 
 onMounted(() => {
   loadCurrentUser();
+  window.addEventListener('siperdok:profile-updated', loadCurrentUser);
   initAdminLTEWidgets();
   router.afterEach(() => {
     setTimeout(initAdminLTEWidgets, 100);
   });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('siperdok:profile-updated', loadCurrentUser);
 });
 </script>

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from './pages/Auth/Login.vue';
 import Register from './pages/Auth/Register.vue';
+import Profile from './pages/Auth/Profile.vue';
 import Dashboard from './pages/Modules/Dashboard.vue';
 import ProjectIndex from './pages/Modules/projects/Index.vue';
 import ProjectCreate from './pages/Modules/projects/Create.vue';
@@ -17,6 +18,7 @@ const routes = [
   { path: '/', redirect: '/dashboard' },
   { path: '/login', component: Login, meta: { public: true } },
   { path: '/register', component: Register, meta: { public: true } },
+  { path: '/profile', component: Profile },
   { path: '/dashboard', component: Dashboard },
   { path: '/projects', component: ProjectIndex },
   { path: '/projects/create', component: ProjectCreate },

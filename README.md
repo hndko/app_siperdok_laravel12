@@ -197,6 +197,7 @@ export-reports
 - 🔑 Autentikasi REST API berbasis Bearer Token menggunakan Laravel Sanctum.
 - 🧭 Web route hanya berfungsi sebagai SPA fallback untuk render halaman Vue.
 - 🧾 Registrasi pengguna baru dengan role default `pemohon`.
+- 👤 Edit profil pengguna dan ubah password dengan verifikasi password saat ini.
 - 📁 Manajemen permohonan dokumen oleh pemohon.
 - ⬆️ Upload dokumen `pdf`, `doc`, `docx`, `png`, `jpg`, dan `jpeg` maksimal 10 MB.
 - 🧬 Versioning dokumen ketika pemohon mengunggah revisi.
@@ -220,6 +221,7 @@ Halaman Vue disusun berdasarkan domain agar konsisten dengan struktur REST API:
 resources/js/pages/
 ├── Auth/
 │   ├── Login.vue
+│   ├── Profile.vue
 │   └── Register.vue
 └── Modules/
     ├── Assessments/
@@ -414,6 +416,36 @@ Ambil user aktif, role, dan notifikasi:
 ```bash
 curl -X GET http://127.0.0.1:8000/api/v1/me \
   -H "Authorization: Bearer <TOKEN_ANDA>"
+```
+
+Update profil pengguna:
+
+```bash
+curl -X PUT http://127.0.0.1:8000/api/v1/profile \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Nama Baru",
+    "email":"nama.baru@example.com",
+    "phone":"08123456789",
+    "nip_nik":"3171000011112222",
+    "company_name":"PT Contoh"
+  }'
+```
+
+Ubah password profil:
+
+```bash
+curl -X PUT http://127.0.0.1:8000/api/v1/profile \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Nama Baru",
+    "email":"nama.baru@example.com",
+    "current_password":"password_lama",
+    "password":"password_baru",
+    "password_confirmation":"password_baru"
+  }'
 ```
 
 Ambil data dashboard:

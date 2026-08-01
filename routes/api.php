@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Auth\LoginApiController;
 use App\Http\Controllers\Api\Auth\LogoutApiController;
 use App\Http\Controllers\Api\Auth\MeApiController;
 use App\Http\Controllers\Api\Auth\RegisterApiController;
+use App\Http\Controllers\Api\Auth\UpdateProfileApiController;
 use App\Http\Controllers\Api\Modules\DocumentTypes\IndexDocumentTypeApiController;
 use App\Http\Controllers\Api\Modules\Dashboard\ShowDashboardApiController;
 use App\Http\Controllers\Api\Modules\Exports\ExportCertificatePdfApiController;
@@ -28,6 +29,8 @@ Route::prefix('v1')->group(function () {
     // Sanctum Protected
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', MeApiController::class);
+        Route::put('/profile', UpdateProfileApiController::class);
+        Route::post('/profile', UpdateProfileApiController::class);
         Route::post('/logout', LogoutApiController::class);
 
         Route::get('/dashboard', ShowDashboardApiController::class);

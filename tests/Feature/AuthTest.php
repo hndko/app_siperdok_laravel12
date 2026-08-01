@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -75,5 +76,66 @@ class AuthTest extends TestCase
             'email' => 'api_register@example.com',
             'company_name' => 'PT API Register',
         ]);
+    }
+
+    public function test_authenticated_user_can_update_profile()
+    {
+        $user = User::factory()->create([
+            'email' => 'profile@example.com',
+            'password' => bcrypt('password'),
+        ]);
+        $user->assignRole('pemohon');
+
+        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/profile', [
+            'name' => 'Nama Profil Baru',
+            'email' => 'profile_baru@example.com',
+            'phone' => '081299988877',
+            'nip_nik' => '3171000099998888',
+            'company_name' => 'PT Profil Baru',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.user.email', 'profile_baru@example.com');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Nama Profil Baru',
+            'email' => 'profile_baru@example.com',
+            'company_name' => 'PT Profil Baru',
+        ]);
+    }
+
+    public function test_user_must_provide_current_password_to_change_password()
+    {
+        $user = User::factory()->create([
+            'email' => 'password_profile@example.com',
+            'password' => bcrypt('password'),
+        ]);
+        $user->assignRole('pemohon');
+
+        $this->actingAs($user, 'sanctum')->putJson('/api/v1/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'nip_nik' => $user->nip_nik,
+            'company_name' => $user->company_name,
+            'current_password' => 'salah-password',
+            'password' => 'password-baru',
+            'password_confirmation' => 'password-baru',
+        ])->assertUnprocessable();
+
+        $response = $this->actingAs($user, 'sanctum')->putJson('/api/v1/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'nip_nik' => $user->nip_nik,
+            'company_name' => $user->company_name,
+            'current_password' => 'password',
+            'password' => 'password-baru',
+            'password_confirmation' => 'password-baru',
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue(Hash::check('password-baru', $user->fresh()->password));
     }
 }
