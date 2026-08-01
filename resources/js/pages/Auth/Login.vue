@@ -91,34 +91,11 @@
           </button>
         </form>
 
-        <div class="demo-section">
-          <div class="demo-header">
+        <div class="demo-actions">
+          <button type="button" class="demo-trigger" @click="showDemoAccounts = true">
             <i class="fas fa-key" aria-hidden="true"></i>
-            <span>Akun demo</span>
-          </div>
-          <div class="demo-grid">
-            <button type="button" class="demo-button demo-pemohon" @click="fillLogin('pemohon@example.com', 'password')">
-              <span class="demo-icon"><i class="fas fa-user-tie" aria-hidden="true"></i></span>
-              <span>
-                <strong>Pemohon</strong>
-                <small>pemohon@example.com</small>
-              </span>
-            </button>
-            <button type="button" class="demo-button demo-penilai" @click="fillLogin('penilai@example.com', 'password')">
-              <span class="demo-icon"><i class="fas fa-user-check" aria-hidden="true"></i></span>
-              <span>
-                <strong>Penilai</strong>
-                <small>penilai@example.com</small>
-              </span>
-            </button>
-            <button type="button" class="demo-button demo-admin" @click="fillLogin('admin@example.com', 'password')">
-              <span class="demo-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
-              <span>
-                <strong>Admin</strong>
-                <small>admin@example.com</small>
-              </span>
-            </button>
-          </div>
+            <span>Lihat akun demo</span>
+          </button>
         </div>
 
         <p class="register-copy">
@@ -127,16 +104,60 @@
         </p>
       </section>
     </section>
+
+    <div
+      v-if="showDemoAccounts"
+      class="demo-modal-backdrop"
+      role="presentation"
+      @click.self="showDemoAccounts = false"
+    >
+      <section class="demo-modal" role="dialog" aria-modal="true" aria-labelledby="demo-modal-title">
+        <header class="demo-modal-header">
+          <div>
+            <p class="demo-modal-kicker">Akses cepat</p>
+            <h3 id="demo-modal-title">Akun demo</h3>
+          </div>
+          <button type="button" class="modal-close" aria-label="Tutup modal akun demo" @click="showDemoAccounts = false">
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <div class="demo-grid">
+          <button type="button" class="demo-button demo-pemohon" @click="fillLogin('pemohon@example.com', 'password')">
+            <span class="demo-icon"><i class="fas fa-user-tie" aria-hidden="true"></i></span>
+            <span>
+              <strong>Pemohon</strong>
+              <small>pemohon@example.com</small>
+            </span>
+          </button>
+          <button type="button" class="demo-button demo-penilai" @click="fillLogin('penilai@example.com', 'password')">
+            <span class="demo-icon"><i class="fas fa-user-check" aria-hidden="true"></i></span>
+            <span>
+              <strong>Penilai</strong>
+              <small>penilai@example.com</small>
+            </span>
+          </button>
+          <button type="button" class="demo-button demo-admin" @click="fillLogin('admin@example.com', 'password')">
+            <span class="demo-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+            <span>
+              <strong>Admin</strong>
+              <small>admin@example.com</small>
+            </span>
+          </button>
+        </div>
+      </section>
+    </div>
   </main>
 </template>
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const page = usePage();
 const flash = computed(() => page.props.flash || {});
 const errors = computed(() => page.props.errors || {});
+const showDemoAccounts = ref(false);
 
 const form = useForm({
   email: '',
@@ -147,6 +168,7 @@ const form = useForm({
 const fillLogin = (email, pass) => {
   form.email = email;
   form.password = pass;
+  showDemoAccounts.value = false;
 };
 
 const submit = () => {
@@ -329,8 +351,7 @@ const submit = () => {
   margin: 0;
 }
 
-.form-field > span,
-.demo-header {
+.form-field > span {
   color: #334155;
   font-size: 0.9rem;
   font-weight: 700;
@@ -425,17 +446,100 @@ const submit = () => {
   opacity: 0.72;
 }
 
-.demo-section {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid #e2e8f0;
+.demo-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
 }
 
-.demo-header {
-  display: flex;
+.demo-trigger {
+  min-height: 40px;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 700;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.demo-trigger:hover,
+.demo-trigger:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.demo-trigger:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.2);
+  outline-offset: 2px;
+}
+
+.demo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.demo-modal {
+  width: min(100%, 420px);
+  padding: 22px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.demo-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.demo-modal-kicker {
+  margin: 0 0 3px;
+  color: #0369a1;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.demo-modal h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #475569;
+}
+
+.modal-close:hover,
+.modal-close:focus-visible {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.modal-close:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, 0.2);
+  outline-offset: 2px;
 }
 
 .demo-grid {
