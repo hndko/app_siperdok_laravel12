@@ -41,14 +41,15 @@
 
         <div class="form-group mb-4">
           <label class="font-weight-bold">Catatan Penilai / Alasan Decision <span class="text-danger">*</span></label>
-          <textarea 
-            name="notes" 
-            v-model="notes" 
-            class="form-control" 
-            rows="5" 
-            placeholder="Tuliskan catatan evaluasi, poin revisi yang wajib diperbaiki, atau alasan penolakan..." 
+          <form-input-group
+            v-model="notes"
+            icon="fas fa-comment-dots"
+            type="textarea"
+            rows="5"
+            placeholder="Tuliskan catatan evaluasi, poin revisi wajib, atau alasan penolakan"
             required
-          ></textarea>
+          />
+          <input type="hidden" name="notes" :value="notes">
         </div>
 
         <button 
@@ -65,6 +66,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import FormInputGroup from './FormInputGroup.vue';
 
 const props = defineProps({
   actionUrl: {

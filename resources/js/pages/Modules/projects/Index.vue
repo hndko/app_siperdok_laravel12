@@ -16,10 +16,10 @@
         <form @submit.prevent="loadProjects()" class="mb-4">
           <div class="row">
             <div class="col-md-4 mb-2">
-              <input type="text" v-model="form.search" class="form-control" placeholder="Cari No. Permohonan / Judul..." aria-label="Cari permohonan">
+              <form-input-group v-model="form.search" icon="fas fa-search" placeholder="Cari no. permohonan atau judul" aria-label="Cari permohonan" />
             </div>
             <div class="col-md-3 mb-2">
-              <select v-model="form.status" class="form-control">
+              <form-input-group v-model="form.status" icon="fas fa-tag" type="select" placeholder="Pilih status">
                 <option value="">-- Semua Status --</option>
                 <option value="draft">Draft</option>
                 <option value="submitted">Telah Dikirim</option>
@@ -28,15 +28,15 @@
                 <option value="approved">Disetujui</option>
                 <option value="certificate_issued">Certificate Terbit</option>
                 <option value="rejected">Ditolak</option>
-              </select>
+              </form-input-group>
             </div>
             <div class="col-md-3 mb-2">
-              <select v-model="form.document_type_id" class="form-control">
+              <form-input-group v-model="form.document_type_id" icon="fas fa-file-alt" type="select" placeholder="Pilih jenis dokumen">
                 <option value="">-- Semua Jenis Dokumen --</option>
                 <option v-for="dt in documentTypes" :key="dt.id" :value="dt.id">
                   {{ dt.code }} - {{ dt.name }}
                 </option>
-              </select>
+              </form-input-group>
             </div>
             <div class="col-md-2 mb-2">
               <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
@@ -115,6 +115,7 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 import { useDebouncedRequest } from '../../../composables/useDebouncedRequest';
 import { apiErrorMessage } from '../../../lib/feedback';

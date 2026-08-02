@@ -17,27 +17,27 @@
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Judul Permohonan / Proyek <span class="text-danger">*</span></label>
-                <input type="text" v-model="form.title" class="form-control" required>
+                <form-input-group v-model="form.title" icon="fas fa-heading" placeholder="Masukkan judul permohonan" required />
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Jenis Dokumen Kelayakan <span class="text-danger">*</span></label>
-                <select v-model="form.document_type_id" class="form-control" required>
+                <form-input-group v-model="form.document_type_id" icon="fas fa-file-alt" type="select" placeholder="Pilih jenis dokumen" required>
                   <option value="">-- Pilih Jenis Dokumen --</option>
                   <option v-for="dt in documentTypes" :key="dt.id" :value="dt.id">
                     {{ dt.code }} - {{ dt.name }}
                   </option>
-                </select>
+                </form-input-group>
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Unggah Berkas Baru (Opsional - Kosongkan jika tidak ada revisi berkas)</label>
-                <input type="file" @change="handleFile" class="form-control-file border p-2 rounded bg-light">
+                <form-input-group type="file" icon="fas fa-upload" placeholder="Pilih berkas revisi jika ada" :file-name="selectedFileName" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" @change="handleFile" />
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Deskripsi / Rincian Kegiatan Proyek</label>
-                <textarea v-model="form.description" class="form-control" rows="4"></textarea>
+                <form-input-group v-model="form.description" icon="fas fa-align-left" type="textarea" rows="4" placeholder="Tuliskan rincian kegiatan proyek" />
               </div>
             </div>
 
@@ -63,6 +63,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
@@ -71,6 +72,7 @@ const props = defineProps({
 });
 const project = ref(props.project);
 const documentTypes = ref(props.documentTypes);
+const selectedFileName = ref('');
 const route = useRoute();
 const router = useRouter();
 
@@ -100,6 +102,7 @@ const loadDocumentTypes = async () => {
 
 const handleFile = (e) => {
   form.document = e.target.files[0];
+  selectedFileName.value = form.document?.name || '';
 };
 
 const submitProject = async (action) => {

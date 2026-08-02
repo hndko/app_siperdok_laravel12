@@ -10,15 +10,15 @@
         <form @submit.prevent="filter" class="mb-4">
           <div class="row">
             <div class="col-md-5 mb-2">
-              <input type="text" v-model="form.search" class="form-control" placeholder="Cari Nama / Email / Perusahaan / NIK...">
+              <form-input-group v-model="form.search" icon="fas fa-search" placeholder="Cari nama, email, perusahaan, atau NIK" />
             </div>
             <div class="col-md-4 mb-2">
-              <select v-model="form.role" class="form-control">
+              <form-input-group v-model="form.role" icon="fas fa-user-shield" type="select" placeholder="Pilih role">
                 <option value="">-- Semua Role --</option>
                 <option value="pemohon">Pemohon</option>
                 <option value="penilai">Penilai</option>
                 <option value="admin">Admin</option>
-              </select>
+              </form-input-group>
             </div>
             <div class="col-md-3 mb-2">
               <button type="submit" class="btn btn-primary btn-block font-weight-bold"><i class="fas fa-filter mr-1"></i> Filter</button>
@@ -69,6 +69,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 
 const props = defineProps({
   users: { type: Object, default: () => ({ data: [] }) },

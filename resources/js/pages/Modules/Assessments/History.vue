@@ -10,10 +10,10 @@
         <form @submit.prevent="filter" class="mb-4">
           <div class="row">
             <div class="col-md-5 mb-2">
-              <input type="text" v-model="form.search" class="form-control" placeholder="Cari No. Permohonan / Judul...">
+              <form-input-group v-model="form.search" icon="fas fa-search" placeholder="Cari no. permohonan atau judul" />
             </div>
             <div class="col-md-4 mb-2">
-              <select v-model="form.action" class="form-control">
+              <form-input-group v-model="form.action" icon="fas fa-history" type="select" placeholder="Pilih jenis aksi">
                 <option value="">-- Semua Jenis Aksi --</option>
                 <option value="create_draft">Buat Draft</option>
                 <option value="submit">Kirim Permohonan</option>
@@ -21,7 +21,7 @@
                 <option value="request_revision">Minta Revisi</option>
                 <option value="reject">Ditolak (Reject)</option>
                 <option value="resubmit">Kirim Ulang Revisi</option>
-              </select>
+              </form-input-group>
             </div>
             <div class="col-md-3 mb-2">
               <button type="submit" class="btn btn-info btn-block font-weight-bold"><i class="fas fa-filter mr-1"></i> Filter Log</button>
@@ -74,6 +74,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 
 const props = defineProps({
   logs: { type: Object, default: () => ({ data: [] }) },

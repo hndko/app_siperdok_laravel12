@@ -105,20 +105,21 @@
                     </div>
                     <small class="text-muted">{{ item.item.description || '-' }}</small>
                   </div>
-                  <select v-model="item.status" class="form-control form-control-sm ml-2" style="max-width: 150px;" :disabled="!canUpdateChecklist">
+                  <form-input-group v-model="item.status" icon="fas fa-check-square" type="select" placeholder="Pilih status checklist" class="ml-2 checklist-status-control" :disabled="!canUpdateChecklist">
                     <option value="pending">Pending</option>
                     <option value="passed">Passed</option>
                     <option value="failed">Failed</option>
                     <option value="not_applicable">N/A</option>
-                  </select>
+                  </form-input-group>
                 </div>
-                <textarea
+                <form-input-group
                   v-model="item.notes"
-                  class="form-control form-control-sm"
+                  icon="fas fa-comment-alt"
+                  type="textarea"
                   rows="2"
-                  placeholder="Catatan checklist..."
+                  placeholder="Catatan checklist"
                   :disabled="!canUpdateChecklist"
-                ></textarea>
+                />
               </div>
             </div>
 
@@ -171,13 +172,14 @@
 
               <div class="form-group mb-4">
                 <label class="font-weight-bold">Catatan Penilai / Alasan Decision <span class="text-danger">*</span></label>
-                <textarea 
-                  v-model="form.notes" 
-                  class="form-control" 
-                  rows="5" 
-                  placeholder="Tuliskan catatan evaluasi, poin revisi yang wajib diperbaiki, atau alasan penolakan..." 
+                <form-input-group
+                  v-model="form.notes"
+                  icon="fas fa-comment-dots"
+                  type="textarea"
+                  rows="5"
+                  placeholder="Tuliskan catatan evaluasi, poin revisi wajib, atau alasan penolakan"
                   required
-                ></textarea>
+                />
               </div>
 
               <button 
@@ -227,6 +229,7 @@ import { computed, onMounted, ref } from 'vue';
 import { reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
 import { apiErrorMessage, confirmAction, toast } from '../../../lib/feedback';
 
@@ -402,3 +405,19 @@ onMounted(async () => {
   await Promise.all([loadProject(), loadMe(), loadChecklist()]);
 });
 </script>
+
+<style scoped>
+.checklist-status-control {
+  max-width: 190px;
+  flex: 0 0 190px;
+}
+
+@media (max-width: 575.98px) {
+  .checklist-status-control {
+    max-width: 100%;
+    flex-basis: 100%;
+    margin-top: 8px;
+    margin-left: 0 !important;
+  }
+}
+</style>

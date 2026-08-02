@@ -15,35 +15,35 @@
                 <div class="col-md-6">
                   <div class="form-group">
                     <label class="font-weight-bold">Nama Lengkap <span class="text-danger">*</span></label>
-                    <input v-model="form.name" type="text" class="form-control" autocomplete="name" required>
+                    <form-input-group v-model="form.name" icon="fas fa-user" placeholder="Nama lengkap pemohon" autocomplete="name" required />
                   </div>
                 </div>
 
                 <div class="col-md-6">
                   <div class="form-group">
                     <label class="font-weight-bold">Email <span class="text-danger">*</span></label>
-                    <input v-model="form.email" type="email" class="form-control" autocomplete="email" required>
+                    <form-input-group v-model="form.email" icon="fas fa-envelope" type="email" placeholder="nama@email.com" autocomplete="email" required />
                   </div>
                 </div>
 
                 <div class="col-md-6">
                   <div class="form-group">
                     <label class="font-weight-bold">No. Telepon / WhatsApp</label>
-                    <input v-model="form.phone" type="text" class="form-control" autocomplete="tel">
+                    <form-input-group v-model="form.phone" icon="fas fa-phone" placeholder="08123456789" autocomplete="tel" />
                   </div>
                 </div>
 
                 <div class="col-md-6">
                   <div class="form-group">
                     <label class="font-weight-bold">NIK / NIP</label>
-                    <input v-model="form.nip_nik" type="text" class="form-control">
+                    <form-input-group v-model="form.nip_nik" icon="fas fa-id-card" placeholder="NIK atau NIP pengguna" />
                   </div>
                 </div>
 
                 <div class="col-12">
                   <div class="form-group mb-0">
                     <label class="font-weight-bold">Perusahaan / Instansi</label>
-                    <input v-model="form.company_name" type="text" class="form-control" autocomplete="organization">
+                    <form-input-group v-model="form.company_name" icon="fas fa-building" placeholder="Nama perusahaan atau instansi" autocomplete="organization" />
                   </div>
                 </div>
               </div>
@@ -60,21 +60,21 @@
                 <div class="col-md-4">
                   <div class="form-group mb-md-0">
                     <label class="font-weight-bold">Password Saat Ini</label>
-                    <input v-model="form.current_password" type="password" class="form-control" autocomplete="current-password">
+                    <form-input-group v-model="form.current_password" icon="fas fa-lock" type="password" placeholder="Masukkan password saat ini" autocomplete="current-password" />
                   </div>
                 </div>
 
                 <div class="col-md-4">
                   <div class="form-group mb-md-0">
                     <label class="font-weight-bold">Password Baru</label>
-                    <input v-model="form.password" type="password" class="form-control" autocomplete="new-password">
+                    <form-input-group v-model="form.password" icon="fas fa-key" type="password" placeholder="Password baru" autocomplete="new-password" />
                   </div>
                 </div>
 
                 <div class="col-md-4">
                   <div class="form-group mb-0">
                     <label class="font-weight-bold">Konfirmasi Password Baru</label>
-                    <input v-model="form.password_confirmation" type="password" class="form-control" autocomplete="new-password">
+                    <form-input-group v-model="form.password_confirmation" icon="fas fa-check-circle" type="password" placeholder="Ulangi password baru" autocomplete="new-password" />
                   </div>
                 </div>
               </div>
@@ -102,6 +102,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
+import FormInputGroup from '../../components/FormInputGroup.vue';
 import { apiErrorMessages, confirmAction, toast } from '../../lib/feedback';
 
 const processing = ref(false);

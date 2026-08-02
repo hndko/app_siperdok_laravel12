@@ -12,27 +12,27 @@
             <div class="card-body">
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Judul Permohonan / Proyek <span class="text-danger">*</span></label>
-                <input type="text" v-model="form.title" class="form-control" placeholder="Contoh: Dokumen Kelayakan Lingkungan Pembangunan Pabrik XYZ" required>
+                <form-input-group v-model="form.title" icon="fas fa-heading" placeholder="Contoh: Dokumen Kelayakan Lingkungan Pembangunan Pabrik XYZ" required />
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Jenis Dokumen Kelayakan <span class="text-danger">*</span></label>
-                <select v-model="form.document_type_id" class="form-control" required>
+                <form-input-group v-model="form.document_type_id" icon="fas fa-file-alt" type="select" placeholder="Pilih jenis dokumen" required>
                   <option value="">-- Pilih Jenis Dokumen --</option>
                   <option v-for="dt in documentTypes" :key="dt.id" :value="dt.id">
                     {{ dt.code }} - {{ dt.name }}
                   </option>
-                </select>
+                </form-input-group>
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Unggah Berkas Dokumen (PDF/Docx/Max 10MB) <span class="text-danger">*</span></label>
-                <input type="file" @change="handleFile" class="form-control-file border p-2 rounded bg-light" required>
+                <form-input-group type="file" icon="fas fa-upload" placeholder="Pilih berkas dokumen" :file-name="selectedFileName" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" required @change="handleFile" />
               </div>
 
               <div class="form-group mb-3">
                 <label class="font-weight-bold">Deskripsi / Rincian Kegiatan Proyek</label>
-                <textarea v-model="form.description" class="form-control" rows="4" placeholder="Tuliskan gambaran umum kegiatan atau informasi tambahan permohonan..."></textarea>
+                <form-input-group v-model="form.description" icon="fas fa-align-left" type="textarea" rows="4" placeholder="Tuliskan gambaran umum kegiatan atau informasi tambahan permohonan..." />
               </div>
             </div>
 
@@ -58,12 +58,14 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
+import FormInputGroup from '../../../components/FormInputGroup.vue';
 import { apiErrorMessages, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   documentTypes: { type: Array, default: () => [] }
 });
 const documentTypes = ref(props.documentTypes);
+const selectedFileName = ref('');
 const router = useRouter();
 
 const form = reactive({
@@ -77,6 +79,7 @@ const form = reactive({
 
 const handleFile = (e) => {
   form.document = e.target.files[0];
+  selectedFileName.value = form.document?.name || '';
 };
 
 const submitProject = async (action) => {
