@@ -708,6 +708,8 @@ Proyek menyediakan `Dockerfile` dan `docker-compose.yml` untuk menjalankan servi
 docker compose up -d --build
 ```
 
+Panduan lengkap install awal, update, backup, troubleshooting, dan penghapusan stack tersedia di [docs/Docker Deployment Guide.md](docs/Docker%20Deployment%20Guide.md).
+
 Port yang digunakan:
 
 | Service | Port |
