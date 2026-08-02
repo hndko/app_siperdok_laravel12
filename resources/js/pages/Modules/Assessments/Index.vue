@@ -78,6 +78,9 @@
                 </td>
                 <td class="small">{{ prj.submitted_at ? formatDate(prj.submitted_at) : '-' }}</td>
                 <td class="text-center">
+                  <Link :href="`/projects/${prj.id}`" class="btn btn-info btn-sm font-weight-bold mr-1">
+                    <i class="fas fa-eye mr-1"></i> Detail
+                  </Link>
                   <Link :href="`/assessments/${prj.id}/review`" class="btn btn-warning btn-sm font-weight-bold">
                     <i class="fas fa-gavel mr-1"></i> Review & Penilaian
                   </Link>
