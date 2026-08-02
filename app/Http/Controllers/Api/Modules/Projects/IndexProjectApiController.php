@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Modules\Projects;
 
 use App\Http\Controllers\Api\Modules\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProjectResource;
+use App\Http\Resources\ProjectListResource;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,7 +30,7 @@ class IndexProjectApiController extends Controller
         ]);
 
         $projects = Project::query()
-            ->select(['id', 'project_number', 'title', 'applicant_id', 'evaluator_id', 'document_type_id', 'status', 'description', 'submitted_at', 'approved_at', 'rejected_at', 'created_at', 'updated_at'])
+            ->select(['id', 'project_number', 'title', 'applicant_id', 'evaluator_id', 'document_type_id', 'status', 'description', 'submitted_at', 'approved_at', 'rejected_at', 'certificate_number', 'certificate_issued_at', 'created_at', 'updated_at'])
             ->with([
                 'documentType:id,code,name,description,required_files,is_active',
                 'applicant:id,name,email,phone,nip_nik,company_name',
@@ -42,6 +42,6 @@ class IndexProjectApiController extends Controller
             ->cursorPaginate($validated['per_page'] ?? 15)
             ->withQueryString();
 
-        return $this->success(ProjectResource::collection($projects));
+        return $this->success(ProjectListResource::collection($projects));
     }
 }

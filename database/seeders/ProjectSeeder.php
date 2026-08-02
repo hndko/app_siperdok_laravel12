@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\DocumentType;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -59,8 +58,8 @@ class ProjectSeeder extends Seeder
                 $status = 'rejected';
             }
 
-            $evaluatorId = in_array($status, ['in_review', 'revision', 'approved', 'rejected']) 
-                ? $penilaiIds[array_rand($penilaiIds)] 
+            $evaluatorId = in_array($status, ['in_review', 'revision', 'approved', 'rejected'])
+                ? $penilaiIds[array_rand($penilaiIds)]
                 : null;
 
             $createdAt = $now->copy()->subDays(rand(1, 180))->subMinutes(rand(1, 1440));
@@ -68,8 +67,8 @@ class ProjectSeeder extends Seeder
             $approvedAt = ($status === 'approved') ? $submittedAt->copy()->addDays(rand(1, 14)) : null;
             $rejectedAt = ($status === 'rejected') ? $submittedAt->copy()->addDays(rand(1, 14)) : null;
 
-            $projectNum = 'PRJ-' . $createdAt->format('Ym') . '-' . str_pad($i, 5, '0', STR_PAD_LEFT);
-            $title = "Permohonan Document {$docType['code']} - Proyek Usaha #" . rand(1000, 9999);
+            $projectNum = 'PRJ-'.$createdAt->format('Ym').'-'.str_pad($i, 5, '0', STR_PAD_LEFT);
+            $title = "Permohonan Document {$docType['code']} - Proyek Usaha #".rand(1000, 9999);
 
             $projectsBatch[] = [
                 'id' => $i,
@@ -161,7 +160,7 @@ class ProjectSeeder extends Seeder
             }
         }
 
-        if (!empty($projectsBatch)) {
+        if (! empty($projectsBatch)) {
             DB::table('projects')->insert($projectsBatch);
             DB::table('project_documents')->insert($documentsBatch);
             DB::table('assessment_logs')->insert($logsBatch);

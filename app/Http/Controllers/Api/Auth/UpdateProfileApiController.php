@@ -28,7 +28,7 @@ class UpdateProfileApiController extends Controller
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 
-        if (!empty($validated['password']) && !Hash::check($validated['current_password'], $user->password)) {
+        if (! empty($validated['password']) && ! Hash::check($validated['current_password'], $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['Password saat ini tidak sesuai.'],
             ]);
@@ -42,7 +42,7 @@ class UpdateProfileApiController extends Controller
             'company_name' => $validated['company_name'] ?? null,
         ]);
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $user->password = $validated['password'];
         }
 

@@ -53,8 +53,8 @@ class UpdateProjectApiController extends Controller
 
                 if ($request->hasFile('document')) {
                     $file = $request->file('document');
-                    $filename = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
-                    $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
+                    $filename = time().'_'.preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
+                    $path = $file->storeAs('project_documents/'.$project->id, $filename, 'public');
 
                     ProjectDocument::create([
                         'project_id' => $project->id,

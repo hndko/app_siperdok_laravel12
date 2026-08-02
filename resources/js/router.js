@@ -1,35 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from './pages/Auth/Login.vue';
-import Register from './pages/Auth/Register.vue';
-import Profile from './pages/Auth/Profile.vue';
-import Dashboard from './pages/Modules/Dashboard.vue';
-import ProjectIndex from './pages/Modules/projects/Index.vue';
-import ProjectCreate from './pages/Modules/projects/Create.vue';
-import ProjectEdit from './pages/Modules/projects/Edit.vue';
-import ProjectShow from './pages/Modules/projects/Show.vue';
-import AssessmentIndex from './pages/Modules/Assessments/Index.vue';
-import AssessmentHistory from './pages/Modules/Assessments/History.vue';
-import AssessmentReview from './pages/Modules/Assessments/Review.vue';
-import UserIndex from './pages/Modules/Master/Users.vue';
-import DocumentTypeIndex from './pages/Modules/Master/DocumentTypes.vue';
-import CertificatePreview from './pages/Modules/Exports/CertificatePreview.vue';
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
-  { path: '/login', component: Login, meta: { public: true } },
-  { path: '/register', component: Register, meta: { public: true } },
-  { path: '/profile', component: Profile },
-  { path: '/dashboard', component: Dashboard },
-  { path: '/projects', component: ProjectIndex },
-  { path: '/projects/create', component: ProjectCreate },
-  { path: '/projects/:id/edit', component: ProjectEdit },
-  { path: '/projects/:id', component: ProjectShow },
-  { path: '/assessments', component: AssessmentIndex },
-  { path: '/assessments/history', component: AssessmentHistory },
-  { path: '/assessments/:id/review', component: AssessmentReview },
-  { path: '/master/users', component: UserIndex },
-  { path: '/master/document-types', component: DocumentTypeIndex },
-  { path: '/exports/projects/:id/certificate/preview', component: CertificatePreview },
+  { path: '/login', component: () => import('./pages/Auth/Login.vue'), meta: { public: true } },
+  { path: '/register', component: () => import('./pages/Auth/Register.vue'), meta: { public: true } },
+  { path: '/profile', component: () => import('./pages/Auth/Profile.vue') },
+  { path: '/dashboard', component: () => import('./pages/Modules/Dashboard.vue') },
+  { path: '/projects', component: () => import('./pages/Modules/projects/Index.vue') },
+  { path: '/projects/create', component: () => import('./pages/Modules/projects/Create.vue') },
+  { path: '/projects/:id/edit', component: () => import('./pages/Modules/projects/Edit.vue') },
+  { path: '/projects/:id', component: () => import('./pages/Modules/projects/Show.vue') },
+  { path: '/assessments', component: () => import('./pages/Modules/Assessments/Index.vue') },
+  { path: '/assessments/history', component: () => import('./pages/Modules/Assessments/History.vue') },
+  { path: '/assessments/:id/review', component: () => import('./pages/Modules/Assessments/Review.vue') },
+  { path: '/master/users', component: () => import('./pages/Modules/Master/Users.vue') },
+  { path: '/master/document-types', component: () => import('./pages/Modules/Master/DocumentTypes.vue') },
+  { path: '/exports/projects/:id/certificate/preview', component: () => import('./pages/Modules/Exports/CertificatePreview.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
 ];
 

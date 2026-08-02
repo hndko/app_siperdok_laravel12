@@ -19,6 +19,8 @@ SIPERDOK adalah aplikasi web untuk mengelola pengajuan, penilaian, revisi, dan p
   - [⚙️ Instalasi](#️-instalasi)
   - [🚀 Penggunaan](#-penggunaan)
   - [📡 REST API](#-rest-api)
+  - [⚙️ Catatan Performa](#️-catatan-performa)
+  - [🔒 Catatan Keamanan](#-catatan-keamanan)
   - [🧪 Pengujian](#-pengujian)
   - [🐳 Docker](#-docker)
   - [🤝 Kontribusi](#-kontribusi)
@@ -118,7 +120,7 @@ DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=db_siperdok_laravel12
 DB_USERNAME=postgres
-DB_PASSWORD=doko1337
+DB_PASSWORD=<password-database-lokal>
 ```
 
 Tabel inti aplikasi:
@@ -251,6 +253,7 @@ Aturan struktur:
 - `Auth` berada di luar `Modules` karena autentikasi adalah domain khusus.
 - Semua halaman fitur seperti dashboard, project, assessment, export, dan master data berada di dalam `Modules`.
 - Routing halaman dikelola oleh Vue Router di `resources/js/router.js`.
+- Route Vue menggunakan dynamic import agar halaman dipecah menjadi chunk terpisah saat build production.
 - `routes/web.php` hanya menyajikan shell `resources/views/app.blade.php` sebagai fallback SPA.
 - Komponen Vue mengambil data, memproses filter, submit form, logout, dan export melalui REST API `/api/v1`.
 
@@ -402,6 +405,8 @@ npm run build
 ## 📡 REST API
 
 Semua aksi bisnis aplikasi berjalan melalui REST API prefix `/api/v1`. Web route hanya menjadi fallback untuk membuka halaman Vue.
+
+Dokumentasi endpoint lengkap tersedia di [docs/REST API.md](docs/REST%20API.md).
 
 Register API:
 
@@ -620,6 +625,38 @@ Logout API:
 curl -X POST http://127.0.0.1:8000/api/v1/logout \
   -H "Authorization: Bearer <TOKEN_ANDA>"
 ```
+
+---
+
+## ⚙️ Catatan Performa
+
+- Daftar project, histori assessment, notifikasi, dan master user menggunakan cursor pagination dengan batas `per_page` maksimal 100.
+- Endpoint daftar project memakai `ProjectListResource` agar payload list tidak membawa dokumen, logs, dan checklist detail.
+- Detail project memakai eager loading selektif dengan kolom terbatas untuk mencegah N+1 query.
+- Dashboard memakai conditional aggregation untuk menghitung status dalam satu query utama, lalu statistik dicache 60 detik per user/role.
+- Master `document_types` dan checklist aktif dicache 10 menit karena termasuk data referensi yang jarang berubah.
+- Export CSV memakai streaming dan chunking; export Excel memakai `FromQuery` agar tidak memuat semua data sekaligus.
+- Vue Router memakai route-level code splitting; halaman daftar memakai debounce 400 ms dan request cancellation untuk filter/search.
+
+Pengukuran lokal terakhir pada environment development:
+
+| Endpoint/Service | Query | Waktu |
+| --- | ---: | ---: |
+| Dashboard service cold-cache | 10 | 52.62 ms |
+| Dashboard service cached | 6 | 23.29 ms |
+
+Angka di atas adalah hasil lokal dan bukan klaim performa production.
+
+---
+
+## 🔒 Catatan Keamanan
+
+- Autentikasi API menggunakan Laravel Sanctum Bearer Token.
+- Authorization project menggunakan policy dan visibility query berdasarkan role/ownership.
+- Upload dokumen divalidasi format dan ukuran sebelum disimpan.
+- PDF certificate resmi hanya tersedia setelah status `certificate_issued`.
+- Endpoint verifikasi certificate publik memakai throttling.
+- Secret production tidak boleh disimpan di repository. Nilai `.env.example` bersifat placeholder atau credential development.
 
 ---
 

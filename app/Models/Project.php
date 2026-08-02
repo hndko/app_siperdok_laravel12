@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Project extends Model
 {
@@ -83,12 +84,15 @@ class Project extends Model
     {
         return $query
             ->when($filters['search'] ?? null, function (Builder $q, string $search) {
-                $q->where(function (Builder $inner) use ($search) {
-                    $inner->where('title', 'like', "%{$search}%")
-                        ->orWhere('project_number', 'like', "%{$search}%")
-                        ->orWhereHas('applicant', function (Builder $applicant) use ($search) {
-                            $applicant->where('name', 'like', "%{$search}%")
-                                ->orWhere('company_name', 'like', "%{$search}%");
+                $operator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $keyword = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
+
+                $q->where(function (Builder $inner) use ($keyword, $operator) {
+                    $inner->where('title', $operator, $keyword)
+                        ->orWhere('project_number', $operator, $keyword)
+                        ->orWhereHas('applicant', function (Builder $applicant) use ($keyword, $operator) {
+                            $applicant->where('name', $operator, $keyword)
+                                ->orWhere('company_name', $operator, $keyword);
                         });
                 });
             })

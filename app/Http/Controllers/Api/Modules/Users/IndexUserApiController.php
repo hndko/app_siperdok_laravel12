@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api\Modules\Users;
 
 use App\Http\Controllers\Api\Modules\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IndexUserApiController extends Controller
 {
@@ -22,13 +23,17 @@ class IndexUserApiController extends Controller
         ]);
 
         $users = User::query()
+            ->select(['id', 'name', 'email', 'phone', 'nip_nik', 'company_name', 'created_at'])
             ->with('roles')
             ->when($validated['search'] ?? null, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('company_name', 'like', "%{$search}%")
-                        ->orWhere('nip_nik', 'like', "%{$search}%");
+                $operator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $keyword = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
+
+                $query->where(function ($q) use ($operator, $keyword) {
+                    $q->where('name', $operator, $keyword)
+                        ->orWhere('email', $operator, $keyword)
+                        ->orWhere('company_name', $operator, $keyword)
+                        ->orWhere('nip_nik', $operator, $keyword);
                 });
             })
             ->when($validated['role'] ?? null, fn ($query, $role) => $query->role($role))

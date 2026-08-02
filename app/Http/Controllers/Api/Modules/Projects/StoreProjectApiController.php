@@ -34,7 +34,7 @@ class StoreProjectApiController extends Controller
 
         try {
             $project = DB::transaction(function () use ($validated, $request, $user) {
-                $projectNum = 'PRJ-' . date('Ym') . '-' . str_pad((Project::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+                $projectNum = 'PRJ-'.date('Ym').'-'.str_pad((Project::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
                 $status = ($validated['submit_action'] === 'submit') ? Project::STATUS_SUBMITTED : Project::STATUS_DRAFT;
 
                 $project = Project::create([
@@ -48,8 +48,8 @@ class StoreProjectApiController extends Controller
                 ]);
 
                 $file = $request->file('document');
-                $filename = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
-                $path = $file->storeAs('project_documents/' . $project->id, $filename, 'public');
+                $filename = time().'_'.preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
+                $path = $file->storeAs('project_documents/'.$project->id, $filename, 'public');
 
                 ProjectDocument::create([
                     'project_id' => $project->id,

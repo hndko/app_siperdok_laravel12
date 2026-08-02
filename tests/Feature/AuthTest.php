@@ -54,7 +54,7 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['status', 'access_token', 'token_type', 'user']);
+            ->assertJsonStructure(['status', 'access_token', 'token_type', 'user']);
     }
 
     public function test_user_can_register_via_sanctum_api()
@@ -70,7 +70,7 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertCreated()
-                 ->assertJsonStructure(['status', 'access_token', 'token_type', 'user']);
+            ->assertJsonStructure(['status', 'access_token', 'token_type', 'user']);
 
         $this->assertDatabaseHas('users', [
             'email' => 'api_register@example.com',

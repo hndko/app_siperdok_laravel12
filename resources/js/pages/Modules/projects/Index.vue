@@ -13,10 +13,10 @@
       </div>
       <div class="card-body">
         <!-- Filter Form -->
-        <form @submit.prevent="filter" class="mb-4">
+        <form @submit.prevent="loadProjects()" class="mb-4">
           <div class="row">
             <div class="col-md-4 mb-2">
-              <input type="text" v-model="form.search" class="form-control" placeholder="Cari No. Permohonan / Judul...">
+              <input type="text" v-model="form.search" class="form-control" placeholder="Cari No. Permohonan / Judul..." aria-label="Cari permohonan">
             </div>
             <div class="col-md-3 mb-2">
               <select v-model="form.status" class="form-control">
@@ -39,10 +39,19 @@
               </select>
             </div>
             <div class="col-md-2 mb-2">
-              <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-filter mr-1"></i> Filter</button>
+              <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
+                <i :class="loading ? 'fas fa-spinner fa-spin' : 'fas fa-filter'" class="mr-1"></i> Filter
+              </button>
             </div>
           </div>
+          <button type="button" class="btn btn-link btn-sm p-0" @click="resetFilters" :disabled="loading">
+            Reset filter
+          </button>
         </form>
+
+        <div v-if="errorMessage" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
 
         <div class="table-responsive">
           <table class="table table-hover table-striped border align-middle">
@@ -75,15 +84,28 @@
                   </Link>
                 </td>
               </tr>
-              <tr v-if="!projects.data || !projects.data.length">
+              <tr v-if="loading">
+                <td colspan="6" class="text-center text-muted py-4">
+                  <i class="fas fa-spinner fa-spin mr-1"></i> Memuat data permohonan...
+                </td>
+              </tr>
+              <tr v-else-if="!projects.data || !projects.data.length">
                 <td colspan="6" class="text-center text-muted py-4">Tidak ada permohonan dokumen yang ditemukan.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-3" v-if="projects.total">
-          <div class="small text-muted">Menampilkan {{ projects.from || 0 }} - {{ projects.to || 0 }} dari {{ formatNumber(projects.total) }} permohonan</div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="small text-muted">Menampilkan {{ formatNumber(projects.data?.length || 0) }} permohonan pada halaman ini</div>
+          <div>
+            <button type="button" class="btn btn-outline-secondary btn-sm mr-1" :disabled="loading || !projects.links?.prev" @click="loadPage(projects.links.prev)">
+              <i class="fas fa-chevron-left"></i> Sebelumnya
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="loading || !projects.links?.next" @click="loadPage(projects.links.next)">
+              Berikutnya <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -91,9 +113,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../../layouts/AppLayout.vue';
 import StatusBadge from '../../../components/StatusBadge.vue';
+import { useDebouncedRequest } from '../../../composables/useDebouncedRequest';
+import { apiErrorMessage } from '../../../lib/feedback';
 
 const props = defineProps({
   projects: { type: Object, default: () => ({ data: [] }) },
@@ -102,6 +126,9 @@ const props = defineProps({
 });
 const projects = ref(props.projects);
 const documentTypes = ref(props.documentTypes);
+const loading = ref(false);
+const errorMessage = ref('');
+const { run: debouncedLoad, cancel } = useDebouncedRequest(400);
 
 const form = reactive({
   search: props.filters.search || '',
@@ -114,9 +141,43 @@ const loadDocumentTypes = async () => {
   documentTypes.value = response.data.data || [];
 };
 
-const filter = async () => {
-  const response = await window.axios.get('/api/v1/projects', { params: form });
-  projects.value = response.data;
+const loadProjects = async (signal = null) => {
+  loading.value = true;
+  errorMessage.value = '';
+
+  try {
+    const response = await window.axios.get('/api/v1/projects', { params: form, signal });
+    projects.value = response.data;
+  } catch (error) {
+    if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+      errorMessage.value = apiErrorMessage(error, 'Data permohonan gagal dimuat.');
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadPage = async (url) => {
+  if (!url) return;
+
+  cancel();
+  loading.value = true;
+  errorMessage.value = '';
+
+  try {
+    const response = await window.axios.get(url);
+    projects.value = response.data;
+  } catch (error) {
+    errorMessage.value = apiErrorMessage(error, 'Halaman permohonan gagal dimuat.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const resetFilters = () => {
+  form.search = '';
+  form.status = '';
+  form.document_type_id = '';
 };
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
@@ -129,6 +190,10 @@ const formatDate = (dateStr) => {
 };
 
 onMounted(async () => {
-  await Promise.all([filter(), loadDocumentTypes()]);
+  await Promise.all([loadProjects(), loadDocumentTypes()]);
+});
+
+watch(form, () => {
+  debouncedLoad((signal) => loadProjects(signal));
 });
 </script>

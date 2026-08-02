@@ -14,6 +14,8 @@ use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Database\Seeders\VerificationChecklistItemSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -149,6 +151,53 @@ class TechnicalTestCoverageTest extends TestCase
 
         $response->assertOk();
         $this->assertStringContainsString('spreadsheetml', $response->headers->get('content-type'));
+    }
+
+    public function test_project_index_limits_pagination_and_uses_list_payload(): void
+    {
+        $pemohon = $this->userWithRole('pemohon');
+        $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
+
+        $response = $this->actingAs($pemohon, 'sanctum')
+            ->getJson('/api/v1/projects?per_page=100');
+
+        $response->assertOk()
+            ->assertJsonPath('meta.per_page', 100)
+            ->assertJsonMissingPath('data.0.documents')
+            ->assertJsonMissingPath('data.0.assessment_logs')
+            ->assertJsonMissingPath('data.0.verification_checklists')
+            ->assertJsonMissingPath('data.0.applicant.password');
+    }
+
+    public function test_project_index_rejects_unbounded_per_page(): void
+    {
+        $pemohon = $this->userWithRole('pemohon');
+
+        $this->actingAs($pemohon, 'sanctum')
+            ->getJson('/api/v1/projects?per_page=101')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('per_page');
+    }
+
+    public function test_dashboard_query_count_is_bounded(): void
+    {
+        Cache::flush();
+
+        $pemohon = $this->userWithRole('pemohon');
+        $this->projectFor($pemohon, Project::STATUS_SUBMITTED);
+        $this->projectFor($pemohon, Project::STATUS_APPROVED);
+
+        $queryCount = 0;
+        DB::listen(function () use (&$queryCount) {
+            $queryCount++;
+        });
+
+        $this->actingAs($pemohon, 'sanctum')
+            ->getJson('/api/v1/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.total_projects', 2);
+
+        $this->assertLessThanOrEqual(12, $queryCount, 'Dashboard menjalankan terlalu banyak query untuk statistik ringkas.');
     }
 
     public function test_penilai_can_save_verification_checklist_without_duplicates(): void

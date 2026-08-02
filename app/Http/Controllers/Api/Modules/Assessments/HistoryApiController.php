@@ -8,6 +8,7 @@ use App\Http\Resources\AssessmentLogResource;
 use App\Models\AssessmentLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HistoryApiController extends Controller
 {
@@ -26,6 +27,7 @@ class HistoryApiController extends Controller
         ]);
 
         $logs = AssessmentLog::query()
+            ->select(['id', 'project_id', 'user_id', 'action', 'previous_status', 'new_status', 'notes', 'created_at'])
             ->with([
                 'project.documentType:id,code,name',
                 'project.applicant:id,name,email,phone,nip_nik,company_name',
@@ -36,10 +38,13 @@ class HistoryApiController extends Controller
             ->when($validated['project_id'] ?? null, fn ($query, $id) => $query->where('project_id', $id))
             ->when($validated['action'] ?? null, fn ($query, $action) => $query->where('action', $action))
             ->when($validated['search'] ?? null, function ($query, $search) {
-                $query->whereHas('project', function ($projectQuery) use ($search) {
+                $operator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $keyword = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
+
+                $query->whereHas('project', function ($projectQuery) use ($operator, $keyword) {
                     $projectQuery
-                        ->where('project_number', 'like', "%{$search}%")
-                        ->orWhere('title', 'like', "%{$search}%");
+                        ->where('project_number', $operator, $keyword)
+                        ->orWhere('title', $operator, $keyword);
                 });
             })
             ->orderByDesc('created_at')

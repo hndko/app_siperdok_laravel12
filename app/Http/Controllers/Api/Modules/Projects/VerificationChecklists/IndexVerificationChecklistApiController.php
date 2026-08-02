@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\ProjectVerificationChecklist;
 use App\Models\VerificationChecklistItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class IndexVerificationChecklistApiController extends Controller
 {
@@ -16,17 +17,26 @@ class IndexVerificationChecklistApiController extends Controller
 
     public function __invoke(Request $request, int $project)
     {
-        $projectModel = Project::findOrFail($project);
+        $projectModel = Project::query()
+            ->select(['id', 'applicant_id', 'evaluator_id', 'status'])
+            ->findOrFail($project);
         $this->authorize('view', $projectModel);
 
-        $items = VerificationChecklistItem::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
+        $items = Cache::remember('verification-checklist-items:active:v1', now()->addMinutes(10), function () {
+            return VerificationChecklistItem::query()
+                ->select(['id', 'name', 'description', 'is_required', 'is_active', 'sort_order'])
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+        });
 
         $existing = ProjectVerificationChecklist::query()
-            ->with(['item', 'reviewer'])
+            ->select(['id', 'project_id', 'checklist_item_id', 'reviewer_id', 'status', 'notes', 'checked_at'])
+            ->with([
+                'item:id,name,description,is_required,is_active,sort_order',
+                'reviewer:id,name,email,phone,nip_nik,company_name',
+            ])
             ->where('project_id', $projectModel->id)
             ->get()
             ->keyBy('checklist_item_id');

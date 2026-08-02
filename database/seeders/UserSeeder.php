@@ -69,8 +69,8 @@ class UserSeeder extends Seeder
             $pemohonData[] = [
                 'name' => "Pemohon User $i",
                 'email' => "pemohon$i@example.com",
-                'phone' => '08' . str_pad($i, 10, '0', STR_PAD_LEFT),
-                'nip_nik' => '3171' . str_pad($i, 12, '0', STR_PAD_LEFT),
+                'phone' => '08'.str_pad($i, 10, '0', STR_PAD_LEFT),
+                'nip_nik' => '3171'.str_pad($i, 12, '0', STR_PAD_LEFT),
                 'company_name' => "PT Perusahaan Mandiri $i",
                 'password' => $passwordHash,
                 'email_verified_at' => $now,
@@ -103,8 +103,8 @@ class UserSeeder extends Seeder
             $penilaiData[] = [
                 'name' => "Penilai Dokumen $i",
                 'email' => "penilai$i@example.com",
-                'phone' => '08' . str_pad($i + 1000, 10, '0', STR_PAD_LEFT),
-                'nip_nik' => '1980' . str_pad($i, 12, '0', STR_PAD_LEFT),
+                'phone' => '08'.str_pad($i + 1000, 10, '0', STR_PAD_LEFT),
+                'nip_nik' => '1980'.str_pad($i, 12, '0', STR_PAD_LEFT),
                 'company_name' => "Tim Evaluator Wilayah $i",
                 'password' => $passwordHash,
                 'email_verified_at' => $now,
