@@ -150,19 +150,21 @@
               </li>
             </template>
 
-            <li class="nav-header">LAPORAN & EXPORT</li>
-            <li class="nav-item">
-              <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('csv')">
-                <i class="nav-icon fas fa-file-csv text-success"></i>
-                <p>Export CSV</p>
-              </button>
-            </li>
-            <li class="nav-item" v-if="isPenilai || isAdmin">
-              <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('xlsx')">
-                <i class="nav-icon fas fa-file-excel text-success"></i>
-                <p>Export Excel (.xlsx)</p>
-              </button>
-            </li>
+            <template v-if="canExportReports">
+              <li class="nav-header">LAPORAN & EXPORT</li>
+              <li class="nav-item">
+                <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('csv')">
+                  <i class="nav-icon fas fa-file-csv text-success"></i>
+                  <p>Export CSV</p>
+                </button>
+              </li>
+              <li class="nav-item">
+                <button type="button" class="nav-link btn btn-link text-left w-100" @click="downloadExport('xlsx')">
+                  <i class="nav-icon fas fa-file-excel text-success"></i>
+                  <p>Export Excel (.xlsx)</p>
+                </button>
+              </li>
+            </template>
           </ul>
         </nav>
       </div>
@@ -241,6 +243,7 @@ const avatarUrl = computed(() => {
 const isPemohon = computed(() => userRole.value === 'pemohon');
 const isPenilai = computed(() => userRole.value === 'penilai');
 const isAdmin = computed(() => userRole.value === 'admin');
+const canExportReports = computed(() => isPenilai.value || isAdmin.value);
 
 const currentPath = computed(() => route.path);
 
@@ -339,6 +342,10 @@ const logout = async () => {
 };
 
 const downloadExport = async (type) => {
+  if (!canExportReports.value) {
+    return;
+  }
+
   try {
     const response = await window.axios.get(`/api/v1/exports/projects/${type}`, {
       responseType: 'blob',
