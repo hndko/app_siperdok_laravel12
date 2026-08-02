@@ -717,7 +717,7 @@ Port yang digunakan:
 | Redis | `6379:6379` |
 | PHP-FPM | `9000` |
 
-Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Stack juga menyediakan worker queue dan scheduler agar proses upload dokumen, notifikasi, dan background job berjalan.
+Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Stack juga menjalankan service `migrate` satu kali sebelum app aktif, lalu menyediakan worker queue dan scheduler agar proses upload dokumen, notifikasi, dan background job berjalan.
 
 ---
 

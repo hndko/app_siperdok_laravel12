@@ -1,9 +1,13 @@
+x-siperdok-app: &siperdok-app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: siperdok-app
+  pull_policy: never
+
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: siperdok-app
+    <<: *siperdok-app
     container_name: siperdok_app
     restart: unless-stopped
     tty: true
@@ -26,8 +30,41 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      - postgres
-      - redis
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - siperdok-network
+
+  migrate:
+    <<: *siperdok-app
+    container_name: siperdok_migrate
+    restart: "no"
+    working_dir: /var/www
+    command: php artisan migrate --force
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-db_siperdok_laravel12}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+    volumes:
+      - .:/var/www
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - siperdok-network
 
@@ -46,7 +83,7 @@ services:
       - siperdok-network
 
   queue:
-    image: siperdok-app
+    <<: *siperdok-app
     container_name: siperdok_queue
     restart: unless-stopped
     working_dir: /var/www
@@ -67,14 +104,19 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      - app
-      - postgres
-      - redis
+      app:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - siperdok-network
 
   scheduler:
-    image: siperdok-app
+    <<: *siperdok-app
     container_name: siperdok_scheduler
     restart: unless-stopped
     working_dir: /var/www
@@ -95,9 +137,14 @@ services:
     volumes:
       - .:/var/www
     depends_on:
-      - app
-      - postgres
-      - redis
+      app:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - siperdok-network
 
@@ -113,6 +160,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-db_siperdok_laravel12}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - siperdok-network
 

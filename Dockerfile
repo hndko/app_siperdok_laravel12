@@ -25,7 +25,15 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+RUN mkdir -p \
+    /var/www/storage/app/public \
+    /var/www/storage/framework/cache \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/testing \
+    /var/www/storage/framework/views \
+    /var/www/storage/logs \
+    /var/www/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 9000
 CMD ["php-fpm"]
