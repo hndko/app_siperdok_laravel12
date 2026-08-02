@@ -1,23 +1,47 @@
 <template>
-  <app-layout :page-title="`Surat Pengesahan: ${project.project_number}`">
+  <app-layout :page-title="pageTitle">
     <div class="row justify-content-center">
-      <div class="col-md-9">
+      <div class="col-lg-10 col-xl-9">
         <div class="card card-outline card-success shadow">
-          <div class="card-header d-flex justify-content-between align-items-center no-print">
-            <h3 class="card-title font-weight-bold text-success">
-              <i class="fas fa-award mr-2"></i> Pratinjau Surat Pengesahan Dokumen (Vue 3 Component)
-            </h3>
+          <div class="certificate-toolbar no-print">
             <div>
-              <button @click="printCertificate" class="btn btn-primary btn-sm mr-2 font-weight-bold">
-                <i class="fas fa-print mr-1"></i> Cetak Surat (Print)
+              <div class="certificate-toolbar__eyebrow">Pratinjau Dokumen Resmi</div>
+              <h3 class="certificate-toolbar__title">
+                <i class="fas fa-award text-success mr-2"></i> Surat Pengesahan Dokumen
+              </h3>
+            </div>
+            <div class="certificate-toolbar__actions">
+              <button type="button" @click="printCertificate" class="btn btn-outline-secondary font-weight-bold">
+                <i class="fas fa-print mr-1"></i> Cetak Surat
               </button>
-              <button type="button" class="btn btn-success btn-sm font-weight-bold" :disabled="project.status !== 'certificate_issued'" @click="downloadCertificate">
-                <i class="fas fa-file-pdf mr-1"></i> Unduh File PDF
+              <button
+                v-if="canIssueCertificate"
+                type="button"
+                class="btn btn-primary font-weight-bold"
+                :disabled="issuingCertificate"
+                @click="issueCertificate"
+              >
+                <i :class="issuingCertificate ? 'fas fa-circle-notch fa-spin mr-1' : 'fas fa-certificate mr-1'"></i>
+                {{ issuingCertificate ? 'Menerbitkan...' : 'Terbitkan Surat' }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-success font-weight-bold"
+                :disabled="project.status !== 'certificate_issued' || downloadingCertificate"
+                @click="downloadCertificate"
+              >
+                <i :class="downloadingCertificate ? 'fas fa-circle-notch fa-spin mr-1' : 'fas fa-file-pdf mr-1'"></i>
+                {{ downloadingCertificate ? 'Mengunduh...' : 'Unduh PDF' }}
               </button>
             </div>
           </div>
 
-          <div class="card-body p-5 certificate-print-area bg-white">
+          <div v-if="loading" class="text-center py-5">
+            <i class="fas fa-circle-notch fa-spin fa-2x text-success mb-3"></i>
+            <p class="text-muted mb-0">Memuat pratinjau surat...</p>
+          </div>
+
+          <div v-else class="card-body p-5 certificate-print-area bg-white">
             <div v-if="project.status !== 'certificate_issued'" class="draft-watermark">DRAFT</div>
             <div class="header text-center border-bottom pb-3 mb-4">
               <h4 class="font-weight-bold text-uppercase mb-1" style="letter-spacing: 1px;">REPUBLIK INDONESIA</h4>
@@ -99,7 +123,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLayout from '../../../layouts/AppLayout.vue';
-import { apiErrorMessage, toast } from '../../../lib/feedback';
+import { apiErrorMessage, confirmAction, toast } from '../../../lib/feedback';
 
 const props = defineProps({
   project: { type: Object, default: () => ({}) }
@@ -107,32 +131,107 @@ const props = defineProps({
 
 const route = useRoute();
 const project = ref(props.project);
+const loading = ref(!props.project?.id);
+const issuingCertificate = ref(false);
+const downloadingCertificate = ref(false);
+const currentRole = ref('');
 const year = computed(() => new Date().getFullYear());
+const pageTitle = computed(() => project.value?.project_number ? `Surat Pengesahan: ${project.value.project_number}` : 'Surat Pengesahan');
+const canIssueCertificate = computed(() => project.value.status === 'approved' && ['admin', 'penilai'].includes(currentRole.value));
 
 const printCertificate = () => {
   window.print();
 };
 
-const downloadCertificate = async () => {
+const issueCertificate = async () => {
+  const confirmed = await confirmAction({
+    title: 'Terbitkan surat resmi?',
+    text: 'Setelah diterbitkan, surat pengesahan resmi dapat diunduh sebagai PDF.',
+    icon: 'question',
+    confirmButtonText: 'Ya, terbitkan',
+    confirmButtonColor: '#007bff',
+  });
+
+  if (!confirmed) return;
+
+  issuingCertificate.value = true;
   try {
-    const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
-      responseType: 'blob',
-    });
-    const url = URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast('success', 'Surat pengesahan berhasil diunduh.');
+    const response = await window.axios.post(`/api/v1/projects/${project.value.id}/issue-certificate`);
+    project.value = response.data.data;
+    toast('success', 'Surat resmi berhasil diterbitkan.');
   } catch (error) {
-    toast('error', apiErrorMessage(error, 'Surat pengesahan gagal diunduh.'));
+    toast('error', apiErrorMessage(error, 'Surat resmi gagal diterbitkan.'));
+  } finally {
+    issuingCertificate.value = false;
   }
 };
 
+const downloadCertificate = async () => {
+  if (project.value.status !== 'certificate_issued') {
+    toast('warning', 'Terbitkan surat resmi terlebih dahulu sebelum mengunduh PDF.');
+    return;
+  }
+
+  downloadingCertificate.value = true;
+  try {
+    const response = await window.axios.get(`/api/v1/exports/projects/${project.value.id}/certificate`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/pdf',
+      },
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Surat_Pengesahan_${project.value.project_number}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast('success', 'Surat pengesahan berhasil diunduh.');
+  } catch (error) {
+    toast('error', await blobErrorMessage(error, 'Surat pengesahan gagal diunduh.'));
+  } finally {
+    downloadingCertificate.value = false;
+  }
+};
+
+const blobErrorMessage = async (error, fallback) => {
+  const data = error.response?.data;
+
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      const parsed = JSON.parse(text);
+      return parsed.message || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return apiErrorMessage(error, fallback);
+};
+
 const loadProject = async () => {
-  const response = await window.axios.get(`/api/v1/projects/${route.params.id}`);
-  project.value = response.data.data;
+  loading.value = true;
+  try {
+    const response = await window.axios.get(`/api/v1/projects/${route.params.id}`);
+    project.value = response.data.data;
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Pratinjau surat gagal dimuat.'));
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadMe = async () => {
+  try {
+    const response = await window.axios.get('/api/v1/me');
+    currentRole.value = response.data.data.role || '';
+  } catch {
+    currentRole.value = '';
+  }
 };
 
 const formatDate = (dateStr) => {
@@ -143,6 +242,7 @@ const formatDate = (dateStr) => {
 
 onMounted(() => {
   loadProject();
+  loadMe();
 });
 </script>
 
@@ -150,6 +250,44 @@ onMounted(() => {
 @media print {
   .no-print { display: none !important; }
   .certificate-print-area { padding: 0 !important; }
+}
+
+.certificate-toolbar {
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.certificate-toolbar__eyebrow {
+  color: #6c757d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.certificate-toolbar__title {
+  color: #1f2937;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 2px 0 0;
+}
+
+.certificate-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.certificate-toolbar__actions .btn {
+  border-radius: 6px;
+  padding: 8px 12px;
 }
 
 .certificate-print-area {
@@ -167,5 +305,20 @@ onMounted(() => {
   border: 6px solid rgba(220, 53, 69, 0.12);
   padding: 8px 28px;
   pointer-events: none;
+}
+
+@media (max-width: 767.98px) {
+  .certificate-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .certificate-toolbar__actions {
+    justify-content: stretch;
+  }
+
+  .certificate-toolbar__actions .btn {
+    flex: 1 1 auto;
+  }
 }
 </style>
