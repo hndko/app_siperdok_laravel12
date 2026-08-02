@@ -165,5 +165,15 @@ class ProjectSeeder extends Seeder
             DB::table('project_documents')->insert($documentsBatch);
             DB::table('assessment_logs')->insert($logsBatch);
         }
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement(<<<'SQL'
+                SELECT setval(
+                    pg_get_serial_sequence('projects', 'id'),
+                    GREATEST((SELECT COALESCE(MAX(id), 0) FROM projects), 1),
+                    (SELECT COUNT(*) > 0 FROM projects)
+                )
+            SQL);
+        }
     }
 }
