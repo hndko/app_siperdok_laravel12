@@ -15,7 +15,7 @@
                 <i class="fas fa-print mr-1"></i> Cetak Surat
               </button>
               <button
-                v-if="canIssueCertificate"
+                v-if="project.status === 'approved'"
                 type="button"
                 class="btn btn-primary font-weight-bold"
                 :disabled="issuingCertificate"
@@ -134,13 +134,104 @@ const project = ref(props.project);
 const loading = ref(!props.project?.id);
 const issuingCertificate = ref(false);
 const downloadingCertificate = ref(false);
-const currentRole = ref('');
 const year = computed(() => new Date().getFullYear());
 const pageTitle = computed(() => project.value?.project_number ? `Surat Pengesahan: ${project.value.project_number}` : 'Surat Pengesahan');
-const canIssueCertificate = computed(() => project.value.status === 'approved' && ['admin', 'penilai'].includes(currentRole.value));
 
 const printCertificate = () => {
-  window.print();
+  const printable = document.querySelector('.certificate-print-area');
+
+  if (!printable) {
+    toast('error', 'Area surat belum siap untuk dicetak.');
+    return;
+  }
+
+  const printWindow = window.open('', '_blank', 'width=960,height=720');
+
+  if (!printWindow) {
+    toast('error', 'Popup cetak diblokir browser. Izinkan popup untuk mencetak surat.');
+    return;
+  }
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${pageTitle.value}</title>
+        <style>
+          @page { size: A4; margin: 14mm; }
+          * { box-sizing: border-box; }
+          body {
+            background: #fff;
+            color: #343a40;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.45;
+            margin: 0;
+          }
+          .certificate-print-area {
+            background: #fff;
+            position: relative;
+            width: 100%;
+          }
+          .header {
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            text-align: center;
+          }
+          .text-center { text-align: center; }
+          .text-uppercase { text-transform: uppercase; }
+          .font-weight-bold { font-weight: 700; }
+          .text-dark { color: #212529; }
+          .text-secondary, .text-muted { color: #6c757d; }
+          .text-primary { color: #007bff; }
+          .text-success { color: #28a745; }
+          .mb-0 { margin-bottom: 0; }
+          .mb-1 { margin-bottom: 4px; }
+          .mb-4 { margin-bottom: 18px; }
+          .mb-5 { margin-bottom: 36px; }
+          .mt-5 { margin-top: 36px; }
+          .my-4 { margin-bottom: 18px; margin-top: 18px; }
+          h4, h6, p { margin-top: 0; }
+          table { border-collapse: collapse; width: 100%; }
+          td { padding: 6px 8px; vertical-align: top; }
+          .stamp-box {
+            background: #f8fff9;
+            border: 1px solid #28a745;
+            border-radius: 4px;
+            margin: 18px 0;
+            padding: 16px;
+            text-align: center;
+          }
+          .draft-watermark {
+            border: 5px solid rgba(220, 53, 69, 0.12);
+            color: rgba(220, 53, 69, 0.14);
+            font-size: 56px;
+            font-weight: 800;
+            left: 50%;
+            padding: 6px 22px;
+            pointer-events: none;
+            position: absolute;
+            top: 42%;
+            transform: translate(-50%, -50%) rotate(-22deg);
+          }
+          .row { display: block; }
+          .offset-md-6 {
+            margin-left: auto;
+            width: 44%;
+          }
+        </style>
+      </head>
+      <body>${printable.outerHTML}</body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
 };
 
 const issueCertificate = async () => {
@@ -225,15 +316,6 @@ const loadProject = async () => {
   }
 };
 
-const loadMe = async () => {
-  try {
-    const response = await window.axios.get('/api/v1/me');
-    currentRole.value = response.data.data.role || '';
-  } catch {
-    currentRole.value = '';
-  }
-};
-
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
@@ -242,7 +324,6 @@ const formatDate = (dateStr) => {
 
 onMounted(() => {
   loadProject();
-  loadMe();
 });
 </script>
 
