@@ -409,6 +409,8 @@ Semua aksi bisnis aplikasi berjalan melalui REST API prefix `/api/v1`. Web route
 
 Dokumentasi endpoint lengkap tersedia di [docs/REST API.md](docs/REST%20API.md).
 
+Collection Postman model portfolio tersedia di [docs/postman/SIPERDOK_Portfolio_API.postman_collection.json](docs/postman/SIPERDOK_Portfolio_API.postman_collection.json). Collection ini sudah berisi ikon, deskripsi folder, contoh request, variable `base_url`, Bearer Token Sanctum, dan script login untuk menyimpan token otomatis.
+
 Register API:
 
 ```bash

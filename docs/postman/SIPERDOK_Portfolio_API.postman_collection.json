@@ -1,0 +1,914 @@
+{
+  "info": {
+    "_postman_id": "f2f91d1d-7fc4-4cc6-8c1d-siperdok",
+    "name": "📁 SIPERDOK Portfolio REST API",
+    "description": "📌 Portfolio API Collection untuk SIPERDOK - Sistem Informasi Persetujuan Dokumen Kelayakan.\n\nCollection ini disusun untuk kebutuhan technical test Full Stack Programmer. Setiap folder menjelaskan alur utama aplikasi: autentikasi Sanctum, pengajuan permohonan dokumen, upload dokumen tervalidasi dan diproses queue, verifikasi administrasi, penilaian, penerbitan certificate, notifikasi, master data, dashboard, dan export laporan.\n\n🔐 Gunakan request Login terlebih dahulu. Token akan otomatis disimpan ke variable `token`.\n🌐 Default base URL: `http://127.0.0.1:8000`.\n👥 Role utama: `pemohon`, `penilai`, dan `admin` untuk master data/export.\n🧵 Queue: upload dokumen dan notifikasi status diproses melalui Laravel Queue.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "project_id",
+      "value": "1"
+    },
+    {
+      "key": "document_type_id",
+      "value": "1"
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "notification_id",
+      "value": "1"
+    },
+    {
+      "key": "certificate_number",
+      "value": "CERT-202608-00001"
+    },
+    {
+      "key": "checklist_item_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "Endpoint publik dan endpoint sesi untuk autentikasi REST API berbasis Laravel Sanctum.",
+      "item": [
+        {
+          "name": "🔑 Login - Simpan Bearer Token",
+          "description": "Login user dan simpan `access_token` ke variable collection `token`. Gunakan akun demo dari seeder, misalnya pemohon/penilai/admin sesuai data lokal.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login berhasil dan token tersedia', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.access_token).to.be.a('string');",
+                  "  pm.collectionVariables.set('token', json.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pemohon@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "📝 Register Pemohon",
+          "description": "Mendaftarkan user baru dengan role default `pemohon`. Token registrasi akan otomatis disimpan jika response sukses.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pemohon Portfolio\",\n  \"email\": \"pemohon.portfolio@example.com\",\n  \"phone\": \"081234567890\",\n  \"nip_nik\": \"3276010203040001\",\n  \"company_name\": \"PT Portfolio Dokumen Sejahtera\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "👤 Me - User Aktif",
+          "description": "Mengambil profil user aktif, role, dan ringkasan notifikasi untuk kebutuhan layout Vue SPA.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🚪 Logout",
+          "description": "Menghapus token Sanctum aktif dari server dan mengosongkan variable token collection.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('token', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "logout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🙋 Profile",
+      "description": "Endpoint edit profil user aktif, termasuk opsi ubah password dengan current password.",
+      "item": [
+        {
+          "name": "✏️ Update Profile",
+          "description": "Memperbarui nama, email, nomor telepon, NIP/NIK, perusahaan, dan password opsional.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Pemohon Updated\",\n  \"email\": \"pemohon@example.com\",\n  \"phone\": \"081234567890\",\n  \"nip_nik\": \"3276010203040001\",\n  \"company_name\": \"PT Maju Bersama Sejahtera\",\n  \"current_password\": \"\",\n  \"password\": \"\",\n  \"password_confirmation\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "description": "Ringkasan KPI, status, dan tren permohonan. Response mengikuti role/ownership user aktif.",
+      "item": [
+        {
+          "name": "📈 Get Dashboard Summary",
+          "description": "Mengambil total permohonan, statistik status, dan data chart untuk dashboard Vue.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📁 Projects / Permohonan Dokumen",
+      "description": "Core workflow pemohon: membuat draft, upload dokumen, submit permohonan, melihat detail, mengubah draft/revisi, dan menghapus draft.",
+      "item": [
+        {
+          "name": "📋 List Projects",
+          "description": "Mengambil daftar permohonan dengan cursor pagination dan filter status/search/jenis dokumen/tanggal.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects?status=submitted&search=&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "submitted"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "🆕 Create Project + Upload Dokumen Queue",
+          "description": "Membuat permohonan baru. Field `document` wajib berupa file pdf/doc/docx/png/jpg/jpeg maksimal 10 MB. Setelah validasi, upload diproses melalui Laravel Queue.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) pm.collectionVariables.set('project_id', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Dokumen Kelayakan Lingkungan Pabrik ABC",
+                  "type": "text"
+                },
+                {
+                  "key": "document_type_id",
+                  "value": "{{document_type_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Pengajuan persetujuan dokumen kelayakan untuk kegiatan pembangunan.",
+                  "type": "text"
+                },
+                {
+                  "key": "submit_action",
+                  "value": "submit",
+                  "type": "text"
+                },
+                {
+                  "key": "document",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🔍 Show Project Detail",
+          "description": "Mengambil detail permohonan, dokumen pendukung, pemohon, penilai, status, dan histori assessment.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🛠️ Update Draft / Revision Project",
+          "description": "Mengubah permohonan selama status masih `draft` atau `revision`. Jika ada file baru, file masuk queue upload sebagai versi dokumen berikutnya.",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Dokumen Kelayakan Lingkungan Pabrik ABC - Revisi",
+                  "type": "text"
+                },
+                {
+                  "key": "document_type_id",
+                  "value": "{{document_type_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Perbaikan dokumen sesuai catatan penilai.",
+                  "type": "text"
+                },
+                {
+                  "key": "submit_action",
+                  "value": "submit",
+                  "type": "text"
+                },
+                {
+                  "key": "document",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🗑️ Delete Draft Project",
+          "description": "Menghapus permohonan. Secara bisnis hanya aman untuk draft atau data yang masih memenuhi aturan authorization.",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "✅ Issue Certificate",
+          "description": "Menerbitkan certificate setelah permohonan berstatus `approved`. Umumnya digunakan role penilai/admin.",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}/issue-certificate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}",
+                "issue-certificate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚖️ Assessment / Penilaian",
+      "description": "Workflow penilai: mulai review, isi checklist verifikasi administrasi, beri keputusan approved/revision/rejected, dan lihat histori.",
+      "item": [
+        {
+          "name": "▶️ Start Review",
+          "description": "Mengubah status permohonan dari `submitted` ke `in_review` dan menetapkan evaluator.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Review administrasi dimulai oleh penilai.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/assessments/{{project_id}}/start-review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assessments",
+                "{{project_id}}",
+                "start-review"
+              ]
+            }
+          }
+        },
+        {
+          "name": "☑️ Get Verification Checklist",
+          "description": "Mengambil daftar checklist verifikasi administrasi untuk permohonan yang sedang dinilai.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}/verification-checklists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}",
+                "verification-checklists"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🧾 Save Verification Checklist",
+          "description": "Menyimpan checklist administrasi. Status item mengikuti enum aplikasi, umumnya `passed`, `failed`, atau `not_applicable` sesuai seed checklist.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"checklist_item_id\": {{checklist_item_id}},\n      \"status\": \"passed\",\n      \"notes\": \"Dokumen identitas dan kelengkapan awal sesuai.\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/projects/{{project_id}}/verification-checklists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "projects",
+                "{{project_id}}",
+                "verification-checklists"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🏁 Submit Assessment Decision",
+          "description": "Memberikan keputusan final/lanjutan: `approved`, `revision`, atau `rejected`. Notes wajib minimal 5 karakter.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approved\",\n  \"notes\": \"Dokumen lengkap dan memenuhi syarat administrasi serta teknis.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/assessments/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assessments",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🕘 Assessment History",
+          "description": "Melihat histori approval/log permohonan. Pemohon hanya melihat miliknya, penilai/admin dapat melihat sesuai akses.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/assessments/history?project_id={{project_id}}&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assessments",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "description": "Endpoint notifikasi status permohonan. Frontend Vue melakukan polling agar notifikasi muncul tanpa relog.",
+      "item": [
+        {
+          "name": "📬 List Notifications",
+          "description": "Mengambil notifikasi user aktif dan jumlah unread.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications?per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "✅ Mark Notification Read",
+          "description": "Menandai satu notifikasi sebagai sudah dibaca.",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/{{notification_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "✅✅ Mark All Notifications Read",
+          "description": "Menandai seluruh notifikasi user aktif sebagai sudah dibaca.",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "read-all"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧩 Master Data",
+      "description": "Endpoint master data untuk admin dan endpoint referensi jenis dokumen untuk form permohonan.",
+      "item": [
+        {
+          "name": "📚 List Document Types",
+          "description": "Mengambil master jenis dokumen. Dipakai form pengajuan permohonan.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/document-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "document-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "✏️ Update Document Type",
+          "description": "Admin memperbarui kode, nama, deskripsi, daftar berkas wajib, dan status aktif jenis dokumen.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"PERTEK-EMISI\",\n  \"name\": \"Persetujuan Teknis Emisi Udara\",\n  \"description\": \"Dokumen kelayakan teknis untuk pengendalian emisi udara.\",\n  \"required_files_text\": \"Surat permohonan\\nDokumen teknis\\nIdentitas pemohon\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/document-types/{{document_type_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "document-types",
+                "{{document_type_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "👥 List Users",
+          "description": "Admin mengambil daftar user dan role untuk fitur Manajemen User & Role.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/users?search=&role=&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "role",
+                  "value": ""
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "🛡️ Update User Role",
+          "description": "Admin memperbarui data user dan role (`admin`, `pemohon`, atau `penilai`).",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Pemohon\",\n  \"email\": \"pemohon@example.com\",\n  \"phone\": \"081234567890\",\n  \"nip_nik\": \"3276010203040001\",\n  \"company_name\": \"PT Maju Bersama Sejahtera\",\n  \"role\": \"pemohon\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📤 Export",
+      "description": "Endpoint export laporan. Akses hanya untuk role yang memiliki permission export, umumnya penilai/admin.",
+      "item": [
+        {
+          "name": "📄 Export Projects CSV",
+          "description": "Mengunduh laporan permohonan dalam format CSV dengan filter opsional.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/exports/projects/csv?status=approved",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports",
+                "projects",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "approved"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "📊 Export Projects XLSX",
+          "description": "Mengunduh laporan permohonan dalam format Excel `.xlsx`.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/exports/projects/xlsx?status=approved",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports",
+                "projects",
+                "xlsx"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "approved"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "🧾 Download Certificate PDF",
+          "description": "Mengunduh PDF certificate resmi. Endpoint hanya valid ketika status permohonan sudah `certificate_issued`.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/exports/projects/{{project_id}}/certificate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exports",
+                "projects",
+                "{{project_id}}",
+                "certificate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 Public Certificate Verification",
+      "description": "Endpoint publik untuk verifikasi nomor certificate tanpa login. Endpoint memakai throttling.",
+      "item": [
+        {
+          "name": "🔎 Verify Certificate Number",
+          "description": "Memverifikasi nomor certificate yang sudah diterbitkan sistem.",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/certificates/verify/{{certificate_number}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "certificates",
+                "verify",
+                "{{certificate_number}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
