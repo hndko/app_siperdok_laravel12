@@ -78,10 +78,16 @@
                 </td>
                 <td class="small">{{ prj.submitted_at ? formatDate(prj.submitted_at) : 'Draft (Belum Dikirim)' }}</td>
                 <td class="text-center">
-                  <Link :href="`/projects/${prj.id}`" class="btn btn-info btn-xs mr-1"><i class="fas fa-eye"></i> Detail</Link>
-                  <Link v-if="['draft', 'revision'].includes(prj.status)" :href="`/projects/${prj.id}/edit`" class="btn btn-warning btn-xs">
-                    <i class="fas fa-edit"></i> {{ prj.status === 'revision' ? 'Perbaiki' : 'Edit' }}
-                  </Link>
+                  <div class="action-buttons">
+                    <Link :href="`/projects/${prj.id}`" class="btn btn-info btn-xs"><i class="fas fa-eye"></i> Detail</Link>
+                    <Link v-if="['draft', 'revision'].includes(prj.status)" :href="`/projects/${prj.id}/edit`" class="btn btn-warning btn-xs">
+                      <i class="fas fa-edit"></i> {{ prj.status === 'revision' ? 'Perbaiki' : 'Edit' }}
+                    </Link>
+                    <Link v-if="['approved', 'certificate_issued'].includes(prj.status)" :href="`/exports/projects/${prj.id}/certificate/preview`" class="btn btn-success btn-xs">
+                      <i :class="prj.status === 'certificate_issued' ? 'fas fa-file-pdf' : 'fas fa-award'"></i>
+                      {{ prj.status === 'certificate_issued' ? 'Unduh PDF' : 'Pratinjau Surat' }}
+                    </Link>
+                  </div>
                 </td>
               </tr>
               <tr v-if="loading">
@@ -198,3 +204,12 @@ watch(form, () => {
   debouncedLoad((signal) => loadProjects(signal));
 });
 </script>
+
+<style scoped>
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+</style>

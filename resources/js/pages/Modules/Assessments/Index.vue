@@ -78,12 +78,18 @@
                 </td>
                 <td class="small">{{ prj.submitted_at ? formatDate(prj.submitted_at) : '-' }}</td>
                 <td class="text-center">
-                  <Link :href="`/projects/${prj.id}`" class="btn btn-info btn-sm font-weight-bold mr-1">
-                    <i class="fas fa-eye mr-1"></i> Detail
-                  </Link>
-                  <Link :href="`/assessments/${prj.id}/review`" class="btn btn-warning btn-sm font-weight-bold">
-                    <i class="fas fa-gavel mr-1"></i> Review & Penilaian
-                  </Link>
+                  <div class="action-buttons">
+                    <Link :href="`/projects/${prj.id}`" class="btn btn-outline-info btn-sm font-weight-bold">
+                      <i class="fas fa-eye mr-1"></i> Detail
+                    </Link>
+                    <Link
+                      v-if="assessmentAction(prj)"
+                      :href="assessmentAction(prj).href"
+                      :class="['btn btn-sm font-weight-bold', assessmentAction(prj).className]"
+                    >
+                      <i :class="assessmentAction(prj).icon" class="mr-1"></i> {{ assessmentAction(prj).label }}
+                    </Link>
+                  </div>
                 </td>
               </tr>
               <tr v-if="loading">
@@ -185,6 +191,49 @@ const resetFilters = () => {
 
 const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
+const assessmentAction = (project) => {
+  const actions = {
+    submitted: {
+      href: `/assessments/${project.id}/review`,
+      className: 'btn-warning',
+      icon: 'fas fa-play',
+      label: 'Mulai Review',
+    },
+    in_review: {
+      href: `/assessments/${project.id}/review`,
+      className: 'btn-warning',
+      icon: 'fas fa-gavel',
+      label: 'Lanjut Review',
+    },
+    revision: {
+      href: `/projects/${project.id}`,
+      className: 'btn-outline-warning',
+      icon: 'fas fa-history',
+      label: 'Lihat Revisi',
+    },
+    approved: {
+      href: `/exports/projects/${project.id}/certificate/preview`,
+      className: 'btn-outline-success',
+      icon: 'fas fa-award',
+      label: 'Pratinjau Surat',
+    },
+    certificate_issued: {
+      href: `/exports/projects/${project.id}/certificate/preview`,
+      className: 'btn-success',
+      icon: 'fas fa-file-pdf',
+      label: 'Unduh PDF',
+    },
+    rejected: {
+      href: `/projects/${project.id}`,
+      className: 'btn-outline-danger',
+      icon: 'fas fa-times-circle',
+      label: 'Lihat Alasan',
+    },
+  };
+
+  return actions[project.status] || null;
+};
+
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
@@ -199,3 +248,12 @@ watch(form, () => {
   debouncedLoad((signal) => loadProjects(signal));
 });
 </script>
+
+<style scoped>
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+</style>
