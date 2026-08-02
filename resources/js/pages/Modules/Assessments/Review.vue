@@ -257,9 +257,9 @@ const loading = ref(!props.project?.id);
 const route = useRoute();
 const pageTitle = computed(() => project.value?.project_number ? `Penilaian Dokumen: ${project.value.project_number}` : 'Penilaian Dokumen');
 const canStartReview = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'submitted');
-const canAssess = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
 const checklistCanUpdate = ref(false);
-const canUpdateChecklist = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review' && checklistCanUpdate.value);
+const canUpdateChecklist = computed(() => checklistCanUpdate.value);
+const canAssess = computed(() => project.value.status === 'in_review' && checklistCanUpdate.value);
 const checklistItems = ref([]);
 const checklistSummary = ref({});
 const originalChecklist = ref(new Map());
@@ -307,6 +307,7 @@ const startReview = async () => {
       ...project.value,
       ...response.data.data,
     };
+    checklistCanUpdate.value = project.value.status === 'in_review';
 
     await loadChecklist();
     await loadProject();
