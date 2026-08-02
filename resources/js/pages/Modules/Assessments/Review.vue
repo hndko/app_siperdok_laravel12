@@ -1,6 +1,11 @@
 <template>
-  <app-layout :page-title="`Penilaian Dokumen: ${project.project_number}`">
-    <div class="row">
+  <app-layout :page-title="pageTitle">
+    <div v-if="loading" class="text-center py-5">
+      <i class="fas fa-circle-notch fa-spin fa-2x text-primary mb-3"></i>
+      <p class="text-muted mb-0">Memuat data penilaian...</p>
+    </div>
+
+    <div v-else class="row">
       <!-- Left Column: Project & Applicant Info -->
       <div class="col-md-7">
         <div class="card card-outline card-warning shadow-sm mb-4">
@@ -148,7 +153,8 @@
                   <button 
                     type="button" 
                     :class="['btn flex-fill mr-1 font-weight-bold', form.decision === 'approved' ? 'btn-success' : 'btn-outline-success']"
-                    @click="form.decision = 'approved'"
+                    :disabled="!canUseDecisionForm"
+                    @click="setDecision('approved')"
                   >
                     <i class="fas fa-check-circle mr-1"></i> SETUJU
                   </button>
@@ -156,7 +162,8 @@
                   <button 
                     type="button" 
                     :class="['btn flex-fill mr-1 font-weight-bold', form.decision === 'revision' ? 'btn-warning' : 'btn-outline-warning']"
-                    @click="form.decision = 'revision'"
+                    :disabled="!canUseDecisionForm"
+                    @click="setDecision('revision')"
                   >
                     <i class="fas fa-edit mr-1"></i> REVISI
                   </button>
@@ -164,7 +171,8 @@
                   <button 
                     type="button" 
                     :class="['btn flex-fill font-weight-bold', form.decision === 'rejected' ? 'btn-danger' : 'btn-outline-danger']"
-                    @click="form.decision = 'rejected'"
+                    :disabled="!canUseDecisionForm"
+                    @click="setDecision('rejected')"
                   >
                     <i class="fas fa-times-circle mr-1"></i> DITOLAK
                   </button>
@@ -180,18 +188,22 @@
                   rows="5"
                   placeholder="Tuliskan catatan evaluasi, poin revisi wajib, atau alasan penolakan"
                   required
+                  :disabled="!canUseDecisionForm"
                 />
               </div>
 
               <button 
                 type="submit" 
-                :disabled="form.processing || !canAssess || !form.notes.trim() || decisionBlocked"
+                :disabled="form.processing || !canUseDecisionForm || !form.notes.trim() || decisionBlocked"
                 class="btn btn-success btn-block btn-lg font-weight-bold shadow-sm"
               >
                 <i class="fas fa-paper-plane mr-2"></i> {{ form.processing ? 'Memproses...' : 'Simpan Keputusan Penilaian' }}
               </button>
               <p v-if="!canAssess" class="text-muted small text-center mt-2 mb-0">
-                Keputusan hanya dapat diberikan setelah review dimulai oleh penilai yang menangani.
+                Mulai review terlebih dahulu sebelum mengisi keputusan penilaian.
+              </p>
+              <p v-else-if="checklistLoading" class="text-muted small text-center mt-2 mb-0">
+                Checklist sedang dimuat sebelum keputusan dapat diisi.
               </p>
               <p v-if="canAssess && decisionBlocked" class="text-danger small text-center mt-2 mb-0">
                 Lengkapi checklist wajib sebelum menyimpan keputusan. Approval juga diblokir jika ada checklist wajib gagal.
@@ -241,10 +253,13 @@ const props = defineProps({
 });
 const project = ref(props.project);
 const currentRole = ref('pemohon');
+const loading = ref(!props.project?.id);
 const route = useRoute();
+const pageTitle = computed(() => project.value?.project_number ? `Penilaian Dokumen: ${project.value.project_number}` : 'Penilaian Dokumen');
 const canStartReview = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'submitted');
 const canAssess = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
-const canUpdateChecklist = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review');
+const checklistCanUpdate = ref(false);
+const canUpdateChecklist = computed(() => ['admin', 'penilai'].includes(currentRole.value) && project.value.status === 'in_review' && checklistCanUpdate.value);
 const checklistItems = ref([]);
 const checklistSummary = ref({});
 const originalChecklist = ref(new Map());
@@ -256,6 +271,7 @@ const decisionBlocked = computed(() => {
 
   return requiredPending > 0 || (form.decision === 'approved' && requiredFailed > 0);
 });
+const canUseDecisionForm = computed(() => canAssess.value && !checklistLoading.value);
 
 const startReviewForm = reactive({
   notes: '',
@@ -283,11 +299,17 @@ const startReview = async () => {
 
   startReviewForm.processing = true;
   try {
-    await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
+    const response = await window.axios.post(`/api/v1/assessments/${project.value.id}/start-review`, {
       notes: startReviewForm.notes,
     });
-    await loadProject();
+
+    project.value = {
+      ...project.value,
+      ...response.data.data,
+    };
+
     await loadChecklist();
+    await loadProject();
     toast('success', 'Review dokumen berhasil dimulai.');
   } catch (error) {
     toast('error', apiErrorMessage(error, 'Review dokumen gagal dimulai.'));
@@ -296,7 +318,16 @@ const startReview = async () => {
   }
 };
 
+const setDecision = (decision) => {
+  if (!canUseDecisionForm.value) return;
+  form.decision = decision;
+};
+
 const submitDecision = async () => {
+  if (!canUseDecisionForm.value || decisionBlocked.value) {
+    return;
+  }
+
   const decisionLabels = {
     approved: 'menyetujui',
     revision: 'meminta revisi',
@@ -340,8 +371,15 @@ const documentDownloadUrl = (doc) => doc.download_url || (doc.file_path ? `/stor
 
 const loadProject = async () => {
   const id = route.params.id;
-  const response = await window.axios.get(`/api/v1/projects/${id}`);
-  project.value = response.data.data;
+  loading.value = true;
+  try {
+    const response = await window.axios.get(`/api/v1/projects/${id}`);
+    project.value = response.data.data;
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Data permohonan gagal dimuat.'));
+  } finally {
+    loading.value = false;
+  }
 };
 
 const loadChecklist = async () => {
@@ -351,6 +389,15 @@ const loadChecklist = async () => {
   try {
     const response = await window.axios.get(`/api/v1/projects/${route.params.id}/verification-checklists`);
     const data = response.data.data;
+    checklistCanUpdate.value = Boolean(data.can_update);
+
+    if (data.project_status) {
+      project.value = {
+        ...project.value,
+        status: data.project_status,
+      };
+    }
+
     checklistItems.value = (data.items.data || data.items || []).map((item) => ({ ...item }));
     checklistSummary.value = data.summary || {};
     originalChecklist.value = new Map(checklistItems.value.map((item) => [item.checklist_item_id, item.status]));
