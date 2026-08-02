@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\Modules\Projects\UpdateProjectApiController;
 use App\Http\Controllers\Api\Modules\Projects\VerificationChecklists\BulkUpdateVerificationChecklistApiController;
 use App\Http\Controllers\Api\Modules\Projects\VerificationChecklists\IndexVerificationChecklistApiController;
 use App\Http\Controllers\Api\Modules\Users\IndexUserApiController;
+use App\Http\Controllers\Api\Modules\Users\UpdateUserApiController;
 use App\Http\Controllers\Api\Notifications\IndexNotificationApiController;
 use App\Http\Controllers\Api\Notifications\MarkAllNotificationsReadApiController;
 use App\Http\Controllers\Api\Notifications\MarkNotificationReadApiController;
@@ -59,6 +60,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/assessments/history', HistoryApiController::class);
 
         Route::get('/users', IndexUserApiController::class);
+        Route::match(['put', 'patch'], '/users/{id}', UpdateUserApiController::class);
         Route::get('/document-types', IndexDocumentTypeApiController::class);
 
         Route::get('/notifications', IndexNotificationApiController::class);
