@@ -74,7 +74,7 @@
                 <button v-if="project.status === 'certificate_issued'" type="button" class="btn btn-success font-weight-bold" @click="downloadCertificate">
                   <i class="fas fa-file-pdf mr-1"></i> Unduh Surat Pengesahan Dokumen (PDF)
                 </button>
-                <button v-if="project.status === 'approved' && (userRole === 'penilai' || userRole === 'admin')" type="button" class="btn btn-primary font-weight-bold" :disabled="issuingCertificate" @click="issueCertificate">
+                <button v-if="canIssueCertificate" type="button" class="btn btn-primary font-weight-bold" :disabled="issuingCertificate" @click="issueCertificate">
                   <i :class="issuingCertificate ? 'fas fa-circle-notch fa-spin mr-1' : 'fas fa-certificate mr-1'"></i>
                   {{ issuingCertificate ? 'Menerbitkan...' : 'Terbitkan Certificate' }}
                 </button>
@@ -150,6 +150,7 @@ const userRole = computed(() => currentRole.value);
 const pageTitle = computed(() => project.value?.project_number ? `Detail Permohonan: ${project.value.project_number}` : 'Detail Permohonan');
 const projectDocuments = computed(() => project.value?.documents || []);
 const assessmentLogs = computed(() => project.value?.assessment_logs || []);
+const canIssueCertificate = computed(() => Boolean(project.value?.permissions?.can_issue_certificate));
 
 const documentDownloadUrl = (doc) => doc.download_url || (doc.file_path ? `/storage/${doc.file_path}` : null);
 
@@ -205,7 +206,8 @@ const issueCertificate = async () => {
 
   issuingCertificate.value = true;
   try {
-    await window.axios.post(`/api/v1/projects/${project.value.id}/issue-certificate`);
+    const response = await window.axios.post(`/api/v1/projects/${project.value.id}/issue-certificate`);
+    project.value = response.data.data;
     await loadProject();
     toast('success', 'Certificate berhasil diterbitkan.');
   } catch (error) {
