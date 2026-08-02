@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\Modules\Projects;
 use App\Http\Controllers\Api\Modules\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
+use App\Jobs\ProcessProjectDocumentUpload;
 use App\Models\Project;
-use App\Models\ProjectDocument;
 use App\Models\User;
 use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
@@ -49,18 +49,22 @@ class StoreProjectApiController extends Controller
 
                 $file = $request->file('document');
                 $filename = time().'_'.preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
-                $path = $file->storeAs('project_documents/'.$project->id, $filename, 'public');
+                $temporaryPath = $file->storeAs(
+                    'queued_project_documents/'.$project->id,
+                    uniqid('upload_', true).'_'.$filename,
+                    'local',
+                );
 
-                ProjectDocument::create([
-                    'project_id' => $project->id,
-                    'document_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_name' => $filename,
-                    'file_size' => $file->getSize(),
-                    'mime_type' => $file->getClientMimeType(),
-                    'version' => 1,
-                    'uploaded_by' => $user->id,
-                ]);
+                ProcessProjectDocumentUpload::dispatch(
+                    projectId: $project->id,
+                    uploadedBy: $user->id,
+                    temporaryPath: $temporaryPath,
+                    documentName: $file->getClientOriginalName(),
+                    fileName: $filename,
+                    fileSize: $file->getSize(),
+                    mimeType: $file->getClientMimeType(),
+                    version: 1,
+                )->afterCommit();
 
                 $this->workflow->logSubmission(
                     project: $project,
@@ -75,7 +79,7 @@ class StoreProjectApiController extends Controller
 
             return $this->success(
                 data: new ProjectResource($project->load(['documentType', 'applicant', 'documents'])),
-                message: 'Permohonan dokumen berhasil disimpan.',
+                message: 'Permohonan dokumen berhasil disimpan. Berkas masuk antrean upload.',
                 code: 201,
             );
         } catch (\Throwable $e) {

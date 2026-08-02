@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\CreateProjectStatusNotification;
+use App\Jobs\ProcessProjectDocumentUpload;
 use App\Models\AssessmentLog;
 use App\Models\DocumentType;
 use App\Models\Notification;
@@ -14,10 +15,12 @@ use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Database\Seeders\VerificationChecklistItemSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TechnicalTestCoverageTest extends TestCase
@@ -76,6 +79,36 @@ class TechnicalTestCoverageTest extends TestCase
 
         $response->assertOk()
             ->assertJsonCount(0, 'data');
+    }
+
+    public function test_project_upload_is_processed_through_queue(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+
+        $pemohon = $this->userWithRole('pemohon');
+        $file = UploadedFile::fake()->create('dokumen-kelayakan.pdf', 512, 'application/pdf');
+
+        $response = $this->actingAs($pemohon, 'sanctum')
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/v1/projects', [
+                'title' => 'Permohonan Upload Queue',
+                'document_type_id' => $this->documentType->id,
+                'description' => 'Dokumen harus diproses melalui queue.',
+                'document' => $file,
+                'submit_action' => 'submit',
+            ]);
+
+        $response->assertCreated();
+
+        $project = Project::where('title', 'Permohonan Upload Queue')->firstOrFail();
+
+        Queue::assertPushed(ProcessProjectDocumentUpload::class, function (ProcessProjectDocumentUpload $job) use ($project, $pemohon) {
+            return $job->projectId === $project->id
+                && $job->uploadedBy === $pemohon->id
+                && $job->documentName === 'dokumen-kelayakan.pdf'
+                && $job->version === 1;
+        });
     }
 
     public function test_penilai_can_start_review(): void

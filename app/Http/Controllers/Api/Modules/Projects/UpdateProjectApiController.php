@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\Modules\Projects;
 use App\Http\Controllers\Api\Modules\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
+use App\Jobs\ProcessProjectDocumentUpload;
 use App\Models\Project;
-use App\Models\ProjectDocument;
 use App\Models\User;
 use App\Services\ProjectWorkflowService;
 use Illuminate\Http\Request;
@@ -54,18 +54,21 @@ class UpdateProjectApiController extends Controller
                 if ($request->hasFile('document')) {
                     $file = $request->file('document');
                     $filename = time().'_'.preg_replace('/[^A-Za-z0-9._-]/', '_', $file->getClientOriginalName());
-                    $path = $file->storeAs('project_documents/'.$project->id, $filename, 'public');
+                    $temporaryPath = $file->storeAs(
+                        'queued_project_documents/'.$project->id,
+                        uniqid('upload_', true).'_'.$filename,
+                        'local',
+                    );
 
-                    ProjectDocument::create([
-                        'project_id' => $project->id,
-                        'document_name' => $file->getClientOriginalName(),
-                        'file_path' => $path,
-                        'file_name' => $filename,
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getClientMimeType(),
-                        'version' => (ProjectDocument::where('project_id', $project->id)->max('version') ?? 0) + 1,
-                        'uploaded_by' => $user->id,
-                    ]);
+                    ProcessProjectDocumentUpload::dispatch(
+                        projectId: $project->id,
+                        uploadedBy: $user->id,
+                        temporaryPath: $temporaryPath,
+                        documentName: $file->getClientOriginalName(),
+                        fileName: $filename,
+                        fileSize: $file->getSize(),
+                        mimeType: $file->getClientMimeType(),
+                    )->afterCommit();
                 }
 
                 $action = ($previousStatus === Project::STATUS_REVISION && $newStatus === Project::STATUS_SUBMITTED)
@@ -85,7 +88,7 @@ class UpdateProjectApiController extends Controller
 
             return $this->success(
                 new ProjectResource($project->fresh()->load(['documentType', 'applicant', 'documents'])),
-                'Permohonan dokumen berhasil diperbarui.',
+                'Permohonan dokumen berhasil diperbarui. Jika ada berkas baru, upload diproses melalui antrean.',
             );
         } catch (\Throwable $e) {
             Log::error('Failed to update API project.', ['project_id' => $id, 'error' => $e->getMessage()]);

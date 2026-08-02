@@ -221,6 +221,7 @@ const apiNotifications = ref([]);
 const apiUnreadNotificationsCount = ref(0);
 const markingNotificationId = ref(null);
 const markingAllRead = ref(false);
+const notificationPollTimer = ref(null);
 const user = computed(() => apiUser.value);
 const userRole = computed(() => apiRole.value || 'pemohon');
 const notifications = computed(() => apiNotifications.value);
@@ -277,10 +278,47 @@ const loadCurrentUser = async () => {
 };
 
 const loadNotifications = async () => {
-  const response = await window.axios.get('/api/v1/notifications');
-  const data = response.data.data;
-  apiNotifications.value = data.notifications.data || data.notifications || [];
-  apiUnreadNotificationsCount.value = data.unread_count || 0;
+  if (!localStorage.getItem('siperdok_token')) {
+    return;
+  }
+
+  try {
+    const response = await window.axios.get('/api/v1/notifications');
+    const data = response.data.data;
+    apiNotifications.value = data.notifications.data || data.notifications || [];
+    apiUnreadNotificationsCount.value = data.unread_count || 0;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('siperdok_token');
+      delete window.axios.defaults.headers.common.Authorization;
+      router.push('/login');
+    }
+  }
+};
+
+const stopNotificationPolling = () => {
+  if (!notificationPollTimer.value) {
+    return;
+  }
+
+  window.clearInterval(notificationPollTimer.value);
+  notificationPollTimer.value = null;
+};
+
+const startNotificationPolling = () => {
+  stopNotificationPolling();
+
+  notificationPollTimer.value = window.setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      loadNotifications();
+    }
+  }, 15000);
+};
+
+const refreshNotificationsWhenVisible = () => {
+  if (document.visibilityState === 'visible') {
+    loadNotifications();
+  }
 };
 
 const markNotificationRead = async (notification) => {
@@ -366,6 +404,8 @@ onMounted(() => {
   loadCurrentUser();
   loadNotifications();
   window.addEventListener('siperdok:profile-updated', loadCurrentUser);
+  document.addEventListener('visibilitychange', refreshNotificationsWhenVisible);
+  startNotificationPolling();
   initAdminLTEWidgets();
   router.afterEach(() => {
     setTimeout(initAdminLTEWidgets, 100);
@@ -374,6 +414,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('siperdok:profile-updated', loadCurrentUser);
+  document.removeEventListener('visibilitychange', refreshNotificationsWhenVisible);
+  stopNotificationPolling();
 });
 </script>
 

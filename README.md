@@ -213,6 +213,7 @@ export-reports
 - 👤 Edit profil pengguna dan ubah password dengan verifikasi password saat ini.
 - 📁 Manajemen permohonan dokumen oleh pemohon.
 - ⬆️ Upload dokumen `pdf`, `doc`, `docx`, `png`, `jpg`, dan `jpeg` maksimal 10 MB.
+- 🧵 Upload dokumen diproses melalui Laravel Queue setelah file lolos validasi.
 - 🧬 Versioning dokumen ketika pemohon mengunggah revisi.
 - ⚖️ Review dan keputusan penilaian oleh role `penilai` atau `admin`.
 - ✅ Checklist verifikasi administrasi sebelum keputusan final.
@@ -220,7 +221,7 @@ export-reports
 - 📄 PDF certificate resmi hanya tersedia setelah status `certificate_issued`.
 - 🔎 Verifikasi publik nomor certificate dengan endpoint throttled.
 - 📝 Audit trail untuk setiap perubahan status permohonan.
-- 🔔 Notifikasi otomatis setelah permohonan diproses, dengan fitur tandai dibaca dan tandai semua dibaca.
+- 🔔 Notifikasi otomatis setelah permohonan diproses, polling tanpa relog, dengan fitur tandai dibaca dan tandai semua dibaca.
 - 📊 Dashboard KPI dan grafik tren permohonan.
 - 🧑‍💻 Master data pengguna untuk admin.
 - 📚 Master jenis dokumen untuk admin.
@@ -653,7 +654,7 @@ Angka di atas adalah hasil lokal dan bukan klaim performa production.
 
 - Autentikasi API menggunakan Laravel Sanctum Bearer Token.
 - Authorization project menggunakan policy dan visibility query berdasarkan role/ownership.
-- Upload dokumen divalidasi format dan ukuran sebelum disimpan.
+- Upload dokumen divalidasi format dan ukuran sebelum masuk antrean pemrosesan file.
 - PDF certificate resmi hanya tersedia setelah status `certificate_issued`.
 - Endpoint verifikasi certificate publik memakai throttling.
 - Secret production tidak boleh disimpan di repository. Nilai `.env.example` bersifat placeholder atau credential development.
@@ -714,7 +715,7 @@ Port yang digunakan:
 | Redis | `6379:6379` |
 | PHP-FPM | `9000` |
 
-Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Stack juga menyediakan worker queue dan scheduler agar proses notifikasi/background job berjalan.
+Catatan: `docker-compose.yml` mengacu ke folder konfigurasi Nginx `./docker-compose/nginx/conf.d/`. Stack juga menyediakan worker queue dan scheduler agar proses upload dokumen, notifikasi, dan background job berjalan.
 
 ---
 
