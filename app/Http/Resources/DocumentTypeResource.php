@@ -16,6 +16,7 @@ class DocumentTypeResource extends JsonResource
             'description' => $this->description,
             'required_files' => $this->required_files,
             'is_active' => $this->is_active,
+            'projects_count' => $this->whenCounted('projects'),
         ];
     }
 }

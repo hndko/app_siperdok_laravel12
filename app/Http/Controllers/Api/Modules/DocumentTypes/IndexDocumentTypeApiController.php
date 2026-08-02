@@ -21,6 +21,7 @@ class IndexDocumentTypeApiController extends Controller
         $documentTypes = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($includeInactive) {
             return DocumentType::query()
                 ->select(['id', 'code', 'name', 'description', 'required_files', 'is_active'])
+                ->withCount('projects')
                 ->when(! $includeInactive, fn ($query) => $query->where('is_active', true))
                 ->orderBy('code')
                 ->get();

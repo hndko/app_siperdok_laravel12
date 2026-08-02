@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Modules\Assessments\StartReviewApiController;
 use App\Http\Controllers\Api\Modules\Assessments\StoreAssessmentApiController;
 use App\Http\Controllers\Api\Modules\Dashboard\ShowDashboardApiController;
 use App\Http\Controllers\Api\Modules\DocumentTypes\IndexDocumentTypeApiController;
+use App\Http\Controllers\Api\Modules\DocumentTypes\UpdateDocumentTypeApiController;
 use App\Http\Controllers\Api\Modules\Exports\ExportCertificatePdfApiController;
 use App\Http\Controllers\Api\Modules\Exports\ExportProjectsCsvApiController;
 use App\Http\Controllers\Api\Modules\Exports\ExportProjectsXlsxApiController;
@@ -62,6 +63,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/users', IndexUserApiController::class);
         Route::match(['put', 'patch'], '/users/{id}', UpdateUserApiController::class);
         Route::get('/document-types', IndexDocumentTypeApiController::class);
+        Route::match(['put', 'patch'], '/document-types/{id}', UpdateDocumentTypeApiController::class);
 
         Route::get('/notifications', IndexNotificationApiController::class);
         Route::patch('/notifications/read-all', MarkAllNotificationsReadApiController::class);
