@@ -33,6 +33,9 @@ class ProjectResource extends JsonResource
             'documents' => ProjectDocumentResource::collection($this->whenLoaded('documents')),
             'assessment_logs' => AssessmentLogResource::collection($this->whenLoaded('assessmentLogs')),
             'verification_checklists' => VerificationChecklistResource::collection($this->whenLoaded('verificationChecklists')),
+            'permissions' => [
+                'can_issue_certificate' => $request->user()?->can('issueCertificate', $this->resource) ?? false,
+            ],
         ];
     }
 }

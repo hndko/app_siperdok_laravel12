@@ -15,7 +15,7 @@
                 <i class="fas fa-print mr-1"></i> Cetak Surat
               </button>
               <button
-                v-if="project.status === 'approved'"
+                v-if="canIssueCertificate"
                 type="button"
                 class="btn btn-primary font-weight-bold"
                 :disabled="issuingCertificate"
@@ -136,6 +136,7 @@ const issuingCertificate = ref(false);
 const downloadingCertificate = ref(false);
 const year = computed(() => new Date().getFullYear());
 const pageTitle = computed(() => project.value?.project_number ? `Surat Pengesahan: ${project.value.project_number}` : 'Surat Pengesahan');
+const canIssueCertificate = computed(() => Boolean(project.value?.permissions?.can_issue_certificate));
 
 const printCertificate = () => {
   const printable = document.querySelector('.certificate-print-area');
