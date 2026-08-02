@@ -52,27 +52,34 @@
 
         <!-- User Profile Dropdown -->
         <li class="nav-item dropdown user-menu">
-          <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown">
-            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="user-image img-circle elevation-1 mr-2" alt="User Image">
-            <span class="d-none d-md-inline font-weight-bold text-dark">{{ user ? user.name : 'User' }}</span>
+          <a href="#" class="nav-link dropdown-toggle siperdok-user-toggle" data-toggle="dropdown" aria-label="Menu akun pengguna">
+            <img :src="avatarUrl" class="siperdok-navbar-avatar" alt="Avatar pengguna">
+            <span class="siperdok-navbar-identity d-none d-md-flex">
+              <span class="siperdok-navbar-name">{{ user ? user.name : 'User' }}</span>
+              <span class="siperdok-navbar-role">{{ roleLabel }}</span>
+            </span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right shadow">
-            <li class="user-header bg-primary text-center p-3">
-              <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=fff&color=0D8ABC`" class="img-circle elevation-2 mb-2" style="width: 70px; height: 70px;" alt="User Image">
-              <p class="mb-0 text-white font-weight-bold">
-                {{ user ? user.name : 'User' }}
-              </p>
-              <small class="text-white-50 d-block">{{ user ? (user.company_name || 'Pengguna Sistem') : '' }}</small>
-              <span class="badge badge-light mt-2">{{ (userRole || 'USER').toUpperCase() }}</span>
+          <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right siperdok-user-dropdown">
+            <li class="siperdok-user-card">
+              <div class="siperdok-user-card-header">
+                <img :src="avatarUrl" class="siperdok-user-card-avatar" alt="Avatar pengguna">
+                <div class="siperdok-user-card-meta">
+                  <div class="siperdok-user-card-name">{{ user ? user.name : 'User' }}</div>
+                  <div class="siperdok-user-card-company">{{ user ? (user.company_name || 'Pengguna Sistem') : 'Pengguna Sistem' }}</div>
+                  <span class="siperdok-role-chip">
+                    <i class="fas fa-user-shield mr-1"></i>{{ roleLabel }}
+                  </span>
+                </div>
+              </div>
             </li>
-            <li class="user-footer p-2 bg-light border-bottom">
-              <Link href="/profile" class="btn btn-default btn-flat btn-block font-weight-bold">
-                <i class="fas fa-user-cog mr-1"></i> Edit Profil
+            <li class="siperdok-user-actions">
+              <Link href="/profile" class="siperdok-user-action">
+                <span class="siperdok-action-icon"><i class="fas fa-user-cog"></i></span>
+                <span>Edit Profil</span>
               </Link>
-            </li>
-            <li class="user-footer p-2 bg-light">
-              <button type="button" class="btn btn-danger btn-flat btn-block font-weight-bold" @click="logout">
-                <i class="fas fa-sign-out-alt mr-1"></i> Keluar (Logout)
+              <button type="button" class="siperdok-user-action siperdok-user-action-danger" @click="logout">
+                <span class="siperdok-action-icon"><i class="fas fa-sign-out-alt"></i></span>
+                <span>Keluar</span>
               </button>
             </li>
           </ul>
@@ -88,16 +95,6 @@
       </Link>
 
       <div class="sidebar">
-        <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-          <div class="image">
-            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user ? user.name : 'User')}&background=0D8ABC&color=fff`" class="img-circle elevation-2" alt="User Image">
-          </div>
-          <div class="info">
-            <a href="#" class="d-block text-white font-weight-bold text-truncate" style="max-width: 170px;">{{ user ? user.name : 'User' }}</a>
-            <span class="badge badge-success small"><i class="fas fa-circle text-xs mr-1"></i> Vue 3 SPA</span>
-          </div>
-        </div>
-
         <!-- Sidebar Menu -->
         <nav class="mt-2">
           <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
@@ -229,6 +226,20 @@ const user = computed(() => apiUser.value);
 const userRole = computed(() => apiRole.value || 'pemohon');
 const notifications = computed(() => apiNotifications.value);
 const unreadNotificationsCount = computed(() => apiUnreadNotificationsCount.value);
+const roleLabel = computed(() => {
+  const labels = {
+    admin: 'Admin',
+    pemohon: 'Pemohon',
+    penilai: 'Penilai',
+  };
+
+  return labels[userRole.value] || 'User';
+});
+const avatarUrl = computed(() => {
+  const name = encodeURIComponent(user.value?.name || 'User');
+
+  return `https://ui-avatars.com/api/?name=${name}&background=0D8ABC&color=fff`;
+});
 
 const isPemohon = computed(() => userRole.value === 'pemohon');
 const isPenilai = computed(() => userRole.value === 'penilai');
@@ -361,3 +372,169 @@ onBeforeUnmount(() => {
   window.removeEventListener('siperdok:profile-updated', loadCurrentUser);
 });
 </script>
+
+<style scoped>
+.siperdok-user-toggle {
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: #111827;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.siperdok-user-toggle:hover,
+.siperdok-user-toggle:focus {
+  background: #f3f6f9;
+  color: #0f172a;
+}
+
+.siperdok-navbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.16);
+}
+
+.siperdok-navbar-identity {
+  min-width: 0;
+  max-width: 260px;
+  flex-direction: column;
+  line-height: 1.12;
+}
+
+.siperdok-navbar-name {
+  overflow: hidden;
+  color: #111827;
+  font-size: 0.94rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.siperdok-navbar-role {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.siperdok-user-dropdown {
+  width: min(340px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+}
+
+.siperdok-user-card {
+  padding: 6px;
+}
+
+.siperdok-user-card-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.siperdok-user-card-avatar {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18);
+}
+
+.siperdok-user-card-meta {
+  min-width: 0;
+}
+
+.siperdok-user-card-name {
+  overflow: hidden;
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+}
+
+.siperdok-user-card-company {
+  overflow: hidden;
+  margin-top: 2px;
+  color: #475569;
+  font-size: 0.83rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.siperdok-role-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #075985;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.siperdok-user-actions {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+}
+
+.siperdok-user-action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f2937;
+  font-weight: 700;
+  text-align: left;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.siperdok-user-action:hover,
+.siperdok-user-action:focus {
+  background: #eef2f7;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.siperdok-user-action-danger {
+  color: #b91c1c;
+}
+
+.siperdok-user-action-danger:hover,
+.siperdok-user-action-danger:focus {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.siperdok-action-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: currentColor;
+}
+
+@media (max-width: 575.98px) {
+  .siperdok-user-toggle {
+    padding-inline: 8px;
+  }
+}
+</style>
