@@ -12,6 +12,8 @@ class ProjectDocumentResource extends JsonResource
         return [
             'id' => $this->id,
             'document_name' => $this->document_name,
+            'file_path' => $this->file_path,
+            'download_url' => $this->file_path ? asset('storage/'.$this->file_path) : null,
             'file_name' => $this->file_name,
             'file_size' => $this->file_size,
             'mime_type' => $this->mime_type,

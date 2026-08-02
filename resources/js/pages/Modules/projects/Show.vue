@@ -1,6 +1,11 @@
 <template>
-  <app-layout :page-title="`Detail Permohonan: ${project.project_number}`">
-    <div class="row">
+  <app-layout :page-title="pageTitle">
+    <div v-if="loading" class="text-center py-5">
+      <i class="fas fa-circle-notch fa-spin fa-2x text-primary mb-3"></i>
+      <p class="text-muted mb-0">Memuat detail permohonan...</p>
+    </div>
+
+    <div v-else-if="project.id" class="row">
       <div class="col-md-8">
         <!-- Main Project Info Card -->
         <div class="card card-outline card-primary shadow-sm mb-4">
@@ -37,7 +42,7 @@
 
             <h5 class="font-weight-bold mb-3"><i class="fas fa-paperclip text-secondary mr-2"></i> Berkas Dokumen Pendukung</h5>
             <div class="list-group mb-4">
-              <div v-for="doc in project.documents" :key="doc.id" class="list-group-item d-flex justify-content-between align-items-center">
+              <div v-for="doc in projectDocuments" :key="doc.id" class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                   <i class="fas fa-file-pdf text-danger fa-lg mr-2"></i>
                   <span class="font-weight-bold">{{ doc.document_name }}</span>
@@ -45,12 +50,13 @@
                   <small class="text-muted d-block mt-1">Diunggah pada {{ formatDate(doc.created_at) }} ({{ (doc.file_size / 1024).toFixed(1) }} KB)</small>
                 </div>
                 <div>
-                  <a :href="`/storage/${doc.file_path}`" target="_blank" class="btn btn-outline-primary btn-sm">
+                  <a v-if="documentDownloadUrl(doc)" :href="documentDownloadUrl(doc)" target="_blank" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-download mr-1"></i> Unduh Berkas
                   </a>
+                  <span v-else class="badge badge-secondary">Berkas tidak tersedia</span>
                 </div>
               </div>
-              <div v-if="!project.documents || !project.documents.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada dokumen yang diunggah.</div>
+              <div v-if="!projectDocuments.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada dokumen yang diunggah.</div>
             </div>
 
             <div v-if="project.status === 'approved' || project.status === 'certificate_issued'" class="p-3 bg-success-soft border border-success rounded text-center mb-3" style="background-color: #f8fff9;">
@@ -97,7 +103,7 @@
           </div>
           <div class="card-body p-3">
             <div class="timeline timeline-inverse">
-              <div v-for="log in project.assessment_logs" :key="log.id">
+              <div v-for="log in assessmentLogs" :key="log.id">
                 <i :class="getLogIcon(log.action)"></i>
                 <div class="timeline-item">
                   <span class="time"><i class="far fa-clock"></i> {{ formatDate(log.created_at) }}</span>
@@ -109,11 +115,15 @@
                   </div>
                 </div>
               </div>
-              <p v-if="!project.assessment_logs || !project.assessment_logs.length" class="text-muted text-center py-3">Belum ada riwayat proses.</p>
+              <p v-if="!assessmentLogs.length" class="text-muted text-center py-3">Belum ada riwayat proses.</p>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div v-else class="alert alert-warning mb-0">
+      Detail permohonan tidak tersedia.
     </div>
   </app-layout>
 </template>
@@ -133,14 +143,27 @@ const project = ref(props.project);
 const currentUser = ref(null);
 const currentRole = ref('pemohon');
 const issuingCertificate = ref(false);
+const loading = ref(!props.project?.id);
 const route = useRoute();
 const user = computed(() => currentUser.value);
 const userRole = computed(() => currentRole.value);
+const pageTitle = computed(() => project.value?.project_number ? `Detail Permohonan: ${project.value.project_number}` : 'Detail Permohonan');
+const projectDocuments = computed(() => project.value?.documents || []);
+const assessmentLogs = computed(() => project.value?.assessment_logs || []);
+
+const documentDownloadUrl = (doc) => doc.download_url || (doc.file_path ? `/storage/${doc.file_path}` : null);
 
 const loadProject = async () => {
   const id = route.params.id;
-  const response = await window.axios.get(`/api/v1/projects/${id}`);
-  project.value = response.data.data;
+  loading.value = true;
+  try {
+    const response = await window.axios.get(`/api/v1/projects/${id}`);
+    project.value = response.data.data;
+  } catch (error) {
+    toast('error', apiErrorMessage(error, 'Detail permohonan gagal dimuat.'));
+  } finally {
+    loading.value = false;
+  }
 };
 
 const loadMe = async () => {

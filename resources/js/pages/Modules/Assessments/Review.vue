@@ -44,9 +44,10 @@
                   <small class="text-muted d-block mt-1">Diunggah: {{ formatDate(doc.created_at) }}</small>
                 </div>
                 <div>
-                  <a :href="`/storage/${doc.file_path}`" target="_blank" class="btn btn-primary btn-sm font-weight-bold">
+                  <a v-if="documentDownloadUrl(doc)" :href="documentDownloadUrl(doc)" target="_blank" class="btn btn-primary btn-sm font-weight-bold">
                     <i class="fas fa-download mr-1"></i> Unduh & Periksa
                   </a>
+                  <span v-else class="badge badge-secondary">Berkas tidak tersedia</span>
                 </div>
               </div>
               <div v-if="!project.documents || !project.documents.length" class="p-3 bg-light border rounded text-muted mb-0">Belum ada berkas dokumen.</div>
@@ -334,6 +335,8 @@ const formatDate = (dateStr) => {
   const d = new Date(dateStr);
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
+
+const documentDownloadUrl = (doc) => doc.download_url || (doc.file_path ? `/storage/${doc.file_path}` : null);
 
 const loadProject = async () => {
   const id = route.params.id;
